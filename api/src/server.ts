@@ -28,10 +28,13 @@ const PORT = process.env.PORT || 3001;
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - adjust for your frontend URL
+// CORS configuration - allow all origins in development
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:8081",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? [process.env.FRONTEND_URL || "http://localhost:8081"]
+        : true, // Allow all origins in development
     credentials: true,
   })
 );
@@ -82,13 +85,15 @@ app.use("*", (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Promptly API server running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(
-    `📱 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:8081"}`
-  );
-});
+// For local development
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`🚀 Promptly API server running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(
+      `📱 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:8081"}`
+    );
+  });
+}
 
 export default app;

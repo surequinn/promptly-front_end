@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { StyleSheet, View, Text } from "react-native";
+import { StyleSheet, View, Text, Platform } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
@@ -67,8 +67,10 @@ export type ScreenName =
   | "RateMyPrompt"
   | "RatingResult";
 
-// Get the Clerk publishable key from environment variables
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+// Get the Clerk publishable key from environment variables or expo config
+const publishableKey =
+  process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+  "pk_test_ZXhwZXJ0LWdvcGhlci0yNS5jbGVyay5hY2NvdW50cy5kZXYk";
 
 if (!publishableKey) {
   throw new Error(
@@ -81,24 +83,28 @@ function AppContent() {
   const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
   const { updateUserProfile } = useApiClient();
 
-  const [fontsLoaded, fontError] = useFonts({
-    // Inter
-    Inter_200ExtraLight,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    // Playfair Display (matching what we have in typography.ts)
-    PlayfairDisplay_700Bold,
-    PlayfairDisplay_800ExtraBold,
-    // Gelasio (matching what we have in typography.ts)
-    Gelasio_600SemiBold,
-    Gelasio_700Bold,
-    // Paytone One
-    PaytoneOne_400Regular,
-    // We can add more weights/styles later if needed by other components
-  });
+  // Only load custom fonts on native platforms, use system fonts on web
+  const [fontsLoaded, fontError] = useFonts(
+    Platform.OS === "web"
+      ? {}
+      : {
+          // Inter
+          Inter_200ExtraLight,
+          Inter_400Regular,
+          Inter_500Medium,
+          Inter_600SemiBold,
+          Inter_700Bold,
+          Inter_800ExtraBold,
+          // Playfair Display (matching what we have in typography.ts)
+          PlayfairDisplay_700Bold,
+          PlayfairDisplay_800ExtraBold,
+          // Gelasio (matching what we have in typography.ts)
+          Gelasio_600SemiBold,
+          Gelasio_700Bold,
+          // Paytone One
+          PaytoneOne_400Regular,
+        }
+  );
 
   const [appIsReady, setAppIsReady] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<ScreenName>("Landing");
@@ -106,11 +112,25 @@ function AppContent() {
   // Update initial screen based on auth state
   useEffect(() => {
     if (clerkLoaded) {
-      // Always start on the landing page, regardless of auth state
-      // The landing page will handle showing different content based on auth
+      // Always start at the landing page regardless of auth state
       setCurrentScreen("Landing");
     }
   }, [clerkLoaded]);
+
+  // Handle font loading and errors - allow app to continue even if fonts fail on web
+  useEffect(() => {
+    // On web, skip font loading entirely and just wait for Clerk
+    if (Platform.OS === "web") {
+      if (clerkLoaded) {
+        setAppIsReady(true);
+      }
+    } else {
+      // On native, wait for both fonts and Clerk
+      if (clerkLoaded && (fontsLoaded || fontError)) {
+        setAppIsReady(true);
+      }
+    }
+  }, [fontsLoaded, fontError, clerkLoaded]);
 
   // State to hold user data
   const [userName, setUserName] = useState<string | null>("Jane");
@@ -153,12 +173,6 @@ function AppContent() {
       },
     ],
   });
-
-  useEffect(() => {
-    if ((fontsLoaded || fontError) && clerkLoaded) {
-      setAppIsReady(true);
-    }
-  }, [fontsLoaded, fontError, clerkLoaded]);
 
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady) {

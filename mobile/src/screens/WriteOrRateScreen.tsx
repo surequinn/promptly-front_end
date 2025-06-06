@@ -12,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient"; // For gradient buttons
+import { useAuth } from "@clerk/clerk-expo";
 import { colors, fonts, fontSizes, spacing } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
 
@@ -33,6 +34,7 @@ const WriteOrRateScreen: React.FC<WriteOrRateScreenProps> = ({
   navigateToNextScreen,
 }) => {
   const [selectedOption, setSelectedOption] = useState<SelectionType>("write"); // Default to 'write'
+  const { signOut } = useAuth();
 
   const handleNextPress = () => {
     if (!selectedOption) {
@@ -168,6 +170,13 @@ const WriteOrRateScreen: React.FC<WriteOrRateScreenProps> = ({
                 onPress={handleNextPress}
                 style={styles.nextButton}
               />
+
+              <TouchableOpacity
+                style={styles.signOutButton}
+                onPress={() => signOut()}
+              >
+                <Text style={styles.signOutText}>Sign Out (for testing)</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -284,6 +293,16 @@ const styles = StyleSheet.create({
     maxWidth: 300, // Consistent with other screens
     minHeight: 55 * scaleFactor, // Consistent
     marginTop: spacing.lg * scaleFactor, // Give some space above if content is short
+  },
+  signOutButton: {
+    marginTop: spacing.md * scaleFactor,
+    padding: spacing.sm * scaleFactor,
+  },
+  signOutText: {
+    fontFamily: fonts.interRegular,
+    fontSize: fontSizes.sm * scaleFactor,
+    color: colors.primary,
+    textAlign: "center",
   },
 });
 

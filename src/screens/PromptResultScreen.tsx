@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -13,10 +13,11 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-// import * as Clipboard from 'expo-clipboard'; // Comment out until installed
-import { colors, fonts, fontSizes, spacing } from "../theme";
-import PromptCard from "../components/PromptCard";
-import { PromptObjectType } from "../types";
+import * as Clipboard from "expo-clipboard";
+import { colors, fonts, fontSizes, spacing } from "@/theme";
+import PromptCard from "@/components/PromptCard";
+import ChangePromptModal from "@/components/modals/ChangePromptModal";
+import { PromptObjectType } from "@/types";
 
 const ombreBackground = require("../../assets/images/ombre_background.png");
 
@@ -31,19 +32,18 @@ const DUMMY_PROMPTS: PromptObjectType[] = [
     id: "1",
     category: "Dating me is like...",
     responseText:
-      "A choose-your-own-adventure book: full of surprises, and you get to pick the happy ending.",
+      "Finding a parking spot right in front of the store on a busy day—unexpectedly perfect and makes you feel like you've won.",
   },
   {
     id: "2",
-    category: "My simple pleasures:",
+    category: "Dating me is like...",
     responseText:
-      "Finding the perfect avocado, the smell of rain on hot pavement, and a playlist that just *gets* it.",
+      "A software update. Mostly improves your life, occasionally has a weird bug, but always trying to get better.",
   },
   {
     id: "3",
-    category: "A random fact I love is...",
-    // Use template literal for multi-line string and to avoid issues with apostrophes
-    responseText: `Otters hold hands when they sleep so they don\'t float away from each other. We could be like those otters.`,
+    category: "Dating me is like...",
+    responseText: `A perfectly curated playlist. There's a song for every mood, some unexpected deep cuts, and it's guaranteed to make you dance.`,
   },
 ];
 
@@ -56,13 +56,17 @@ interface PromptResultScreenProps {
 
 const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
   userName,
-  prompts = DUMMY_PROMPTS,
+  prompts,
   navigateToNextFlow,
   navigateToEditPrompt,
 }) => {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const promptsToRender =
+    prompts && prompts.length > 0 ? prompts : DUMMY_PROMPTS;
+
   const handleCopy = async (textToCopy: string) => {
-    // await Clipboard.setStringAsync(textToCopy); // Comment out until Clipboard is installed
-    Alert.alert("Copied (Simulated)", "Prompt copied to clipboard."); // Simulate for now
+    await Clipboard.setStringAsync(textToCopy);
+    Alert.alert("Copied!", "Prompt copied to clipboard.");
   };
 
   const handleEdit = (prompt: PromptObjectType) => {
@@ -71,14 +75,16 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
   };
 
   const handleChangePrompt = () => {
-    console.log("Change Prompt pressed");
-    Alert.alert(
-      "Change Prompt",
-      "Functionality to fetch new prompts to be implemented."
-    );
-    // This would typically trigger fetching new prompts or navigate to another state
-    // For now, can call navigateToNextFlow which might loop back or go to a placeholder
-    if (navigateToNextFlow) navigateToNextFlow();
+    setIsModalVisible(true);
+    // Alternative approach: could call navigateToNextFlow() directly
+    // if we want to skip the modal and go straight to edit flow
+  };
+
+  const handleSelectPrompt = (prompt: string) => {
+    console.log("Selected new prompt category:", prompt);
+    // Here you would typically trigger an API call to get new prompts
+    // For now, we just close the modal.
+    setIsModalVisible(false);
   };
 
   return (
@@ -117,7 +123,7 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
               </View>
 
               <View style={styles.promptsListContainer}>
-                {prompts.map((prompt) => (
+                {promptsToRender.map((prompt) => (
                   <PromptCard
                     key={prompt.id}
                     category={prompt.category}
@@ -148,6 +154,11 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
           </ScrollView>
         </SafeAreaView>
       </ImageBackground>
+      <ChangePromptModal
+        isVisible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        onSelectPrompt={handleSelectPrompt}
+      />
     </View>
   );
 };
@@ -155,7 +166,6 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
 const styles = StyleSheet.create({
   rootScreenContainer: {
     flex: 1,
-    backgroundColor: colors.primaryMuted,
   },
   backgroundImageFullScreen: {
     flex: 1,
@@ -167,6 +177,7 @@ const styles = StyleSheet.create({
   safeAreaContentContainer: {
     flex: 1,
     backgroundColor: "transparent",
+    justifyContent: "center",
   },
   scrollContainer: {
     flexGrow: 1,
@@ -178,7 +189,7 @@ const styles = StyleSheet.create({
     width: "100%",
     flex: 1,
     alignItems: "center",
-    justifyContent: "space-between", // Pushes button to bottom if content is short
+    justifyContent: "space-around",
     paddingHorizontal: spacing.lg * scaleFactor,
   },
   headerContainer: {
@@ -203,8 +214,7 @@ const styles = StyleSheet.create({
   },
   promptsListContainer: {
     width: "100%",
-    marginBottom: spacing.lg * scaleFactor, // Space above the change prompt button
-    flex: 1, // Allows scrollview to take up space if prompts are many
+    marginVertical: spacing.lg * scaleFactor,
   },
   changePromptButton: {
     width: "80%",

@@ -1,7 +1,9 @@
 export const colors = {
   // Primary palette
   primary: "#402F73", // Main purple
-  primaryMuted: "#5B2D5C", // Muted purple for borders
+  primaryDark: "#302357", // A darker shade for gradients
+  primaryLight: "#7F58C8", // Lighter purple for "Stand out on Hinge"
+  primaryMuted: "#B18DB2", // Lighter purple from Figma
 
   // Text colors
   textPrimary: "#000000", // Main text (prompts)

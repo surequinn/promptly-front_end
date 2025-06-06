@@ -25,24 +25,29 @@ import {
   Gelasio_700Bold,
 } from "@expo-google-fonts/gelasio";
 import { PaytoneOne_400Regular } from "@expo-google-fonts/paytone-one";
-import AuthScreen from "./src/screens/AuthScreen";
-import ThanksForSigningUpScreen from "./src/screens/ThanksForSigningUpScreen";
-import NameInputScreen from "./src/screens/NameInputScreen";
-import AgeInputScreen from "./src/screens/AgeInputScreen";
-import GenderOrientationScreen from "./src/screens/GenderOrientationScreen";
-import WriteOrRateScreen from "./src/screens/WriteOrRateScreen";
-import PickYourVibeScreen from "./src/screens/PickYourVibeScreen";
-import EnterInterestsScreen from "./src/screens/EnterInterestsScreen";
-import UniqueInterestScreen from "./src/screens/UniqueInterestScreen";
-import ProfileCompletionScreen from "./src/screens/ProfileCompletionScreen";
-import PromptResultScreen from "./src/screens/PromptResultScreen";
-import EditPromptScreen from "./src/screens/EditPromptScreen";
-import { PromptObjectType } from "./src/types";
+import LandingPage from "@/screens/LandingPage";
+import AuthScreen from "@/screens/AuthScreen";
+import ThanksForSigningUpScreen from "@/screens/ThanksForSigningUpScreen";
+import NameInputScreen from "@/screens/NameInputScreen";
+import AgeInputScreen from "@/screens/AgeInputScreen";
+import GenderOrientationScreen from "@/screens/GenderOrientationScreen";
+import WriteOrRateScreen from "@/screens/WriteOrRateScreen";
+import PickYourVibeScreen from "@/screens/PickYourVibeScreen";
+import EnterInterestsScreen from "@/screens/EnterInterestsScreen";
+import UniqueInterestScreen from "@/screens/UniqueInterestScreen";
+import ProfileCompletionScreen from "@/screens/ProfileCompletionScreen";
+import PromptResultScreen from "@/screens/PromptResultScreen";
+import EditPromptScreen from "@/screens/EditPromptScreen";
+import GeneratingScreen from "@/screens/GeneratingScreen";
+import RateMyPromptScreen from "@/screens/RateMyPromptScreen";
+import RatingResultScreen from "@/screens/RatingResultScreen";
+import { PromptObjectType } from "@/types";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 export type ScreenName =
+  | "Landing"
   | "Auth"
   | "Thanks"
   | "NameInput"
@@ -54,7 +59,10 @@ export type ScreenName =
   | "UniqueInterest"
   | "ProfileCompletion"
   | "PromptResult"
-  | "EditPrompt";
+  | "EditPrompt"
+  | "Generating"
+  | "RateMyPrompt"
+  | "RatingResult";
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
@@ -77,10 +85,10 @@ export default function App() {
   });
 
   const [appIsReady, setAppIsReady] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState<ScreenName>("Auth");
+  const [currentScreen, setCurrentScreen] = useState<ScreenName>("Landing");
 
   // State to hold user data
-  const [userName, setUserName] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>("Jane");
   const [userAge, setUserAge] = useState<number | null>(null);
   const [userGender, setUserGender] = useState<string | null>(null);
   const [userOrientation, setUserOrientation] = useState<string[] | null>(null);
@@ -91,9 +99,35 @@ export default function App() {
   const [userUniqueInterest, setUserUniqueInterest] = useState<string | null>(
     null
   );
-  const [promptToEdit, setPromptToEdit] = useState<PromptObjectType | null>(
-    null
-  );
+  const [promptToEdit, setPromptToEdit] = useState<PromptObjectType | null>({
+    id: "1",
+    category: "Dating me is like...",
+    responseText:
+      "Finding a parking spot right in front of the store on a busy day—unexpectedly perfect and makes you feel like you've won.",
+  });
+  const [dummyRatedPrompt] = useState<PromptObjectType>({
+    id: "user-1",
+    category: "Together, we could...",
+    responseText:
+      "Finally figure out what the dog is thinking. And also, maybe travel.",
+  });
+  const [dummyRating] = useState({
+    score: "7/10",
+    explanation: [
+      {
+        title: "Strong Start!",
+        body: "Great opening! It's quirky and immediately shows off your sense of humor. The idea of figuring out what a dog is thinking is a fun, universal concept that many people can relate to.",
+      },
+      {
+        title: "Room for a Little More 'You'",
+        body: "The second part, 'maybe travel,' feels a bit generic. It's a common interest, which is fine, but it doesn't add as much personality as the first part. What kind of travel excites you? A spontaneous road trip? Visiting every ramen shop in Tokyo? Getting more specific can make your response even more memorable.",
+      },
+      {
+        title: "The Verdict",
+        body: "This is a solid, engaging response that's likely to get a smile. To elevate it, consider replacing the travel line with another unique, specific idea that complements the humor of the first part. Keep up the great work!",
+      },
+    ],
+  });
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -107,6 +141,7 @@ export default function App() {
     }
   }, [appIsReady]);
 
+  const navigateToLandingScreen = () => setCurrentScreen("Landing");
   const navigateToAuthScreen = () => setCurrentScreen("Auth");
   const navigateToThanksScreen = () => setCurrentScreen("Thanks");
 
@@ -157,12 +192,20 @@ export default function App() {
     setCurrentScreen("EditPrompt");
   };
 
+  const navigateToGeneratingScreen = () => {
+    setCurrentScreen("Generating");
+  };
+
+  const navigateToRateMyPromptScreen = () => {
+    setCurrentScreen("RateMyPrompt");
+  };
+
   // Navigation handler for WriteOrRateScreen
   const handleWriteOrRateNext = (selection: string) => {
     if (selection === "write") {
       navigateToPickYourVibeScreen();
     } else {
-      navigateToAuthScreen();
+      navigateToRateMyPromptScreen();
     }
   };
 
@@ -210,17 +253,22 @@ export default function App() {
   };
 
   // Handler for saving edited prompt
-  const handleSaveEditedPrompt = (promptId: string, editText: string) => {
+  const onSave = (promptId: string, editText: string) => {
     console.log(`Simulating save for prompt ${promptId}: "${editText}"`);
     // Here you would typically update your main prompts array or call an API
-    setPromptToEdit(null); // Clear the editing state
-    setCurrentScreen("PromptResult"); // Go back to results
+    navigateToGeneratingScreen();
   };
 
   // Handler for cancelling prompt edit
   const handleCancelEditPrompt = () => {
     setPromptToEdit(null); // Clear the editing state
     setCurrentScreen("PromptResult"); // Go back to results
+  };
+
+  const handleRateMyPromptNext = (prompt: string, response: string) => {
+    console.log("Prompt to rate:", { prompt, response });
+    // For now, navigate to the result screen
+    setCurrentScreen("RatingResult");
   };
 
   if (!appIsReady) {
@@ -241,6 +289,9 @@ export default function App() {
 
   return (
     <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      {currentScreen === "Landing" && (
+        <LandingPage onSkip={navigateToAuthScreen} />
+      )}
       {currentScreen === "Auth" && (
         <AuthScreen navigateToThanks={navigateToThanksScreen} />
       )}
@@ -279,16 +330,29 @@ export default function App() {
       {currentScreen === "PromptResult" && (
         <PromptResultScreen
           userName={userName}
-          prompts={[]} // Pass empty array or dummy prompts. Screen has its own dummy data for now.
+          prompts={[]} // Pass empty array to use dummy data in the component
           navigateToNextFlow={handlePromptResultFlow}
           navigateToEditPrompt={navigateToEditPromptScreen}
         />
       )}
-      {currentScreen === "EditPrompt" && (
+      {currentScreen === "EditPrompt" && promptToEdit && (
         <EditPromptScreen
           promptToEdit={promptToEdit}
-          onSaveChanges={handleSaveEditedPrompt}
+          onSave={onSave}
           onCancel={handleCancelEditPrompt}
+        />
+      )}
+      {currentScreen === "Generating" && (
+        <GeneratingScreen onGenerationComplete={navigateToPromptResultScreen} />
+      )}
+      {currentScreen === "RateMyPrompt" && (
+        <RateMyPromptScreen navigateToNext={handleRateMyPromptNext} />
+      )}
+      {currentScreen === "RatingResult" && (
+        <RatingResultScreen
+          ratedPrompt={dummyRatedPrompt}
+          rating={dummyRating}
+          navigateToNext={navigateToAuthScreen}
         />
       )}
     </View>

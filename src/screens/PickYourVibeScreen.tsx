@@ -206,11 +206,11 @@ const styles = StyleSheet.create({
   },
   vibeTextSelected: {
     fontFamily: fonts.interSemiBold,
-    fontSize: fontSizes.lg * scaleFactor,
+    fontSize: fontSizes.md * scaleFactor,
   },
   vibeTextUnselected: {
     fontFamily: fonts.interRegular,
-    fontSize: fontSizes.lg * scaleFactor,
+    fontSize: fontSizes.md * scaleFactor,
     color: colors.primary,
   },
   infoText: {

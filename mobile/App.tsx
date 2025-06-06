@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
+import { useApiClient } from "@/services/api";
 import {
   Inter_200ExtraLight,
   Inter_400Regular,
@@ -78,6 +79,7 @@ if (!publishableKey) {
 // Main app content component that uses Clerk hooks
 function AppContent() {
   const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
+  const { updateUserProfile } = useApiClient();
 
   const [fontsLoaded, fontError] = useFonts({
     // Inter
@@ -239,17 +241,29 @@ function AppContent() {
   };
 
   // Placeholder for the next step after unique interest
-  const handleUniqueInterestNext = (uniqueInterest: string) => {
+  const handleUniqueInterestNext = async (uniqueInterest: string) => {
     setUserUniqueInterest(uniqueInterest);
-    console.log("User Profile Data (up to unique interest):", {
-      name: userName,
-      age: userAge,
-      gender: userGender,
-      orientation: userOrientation,
-      vibes: userSelectedVibes,
-      interests: userInterests,
+
+    const profileData = {
+      name: userName || undefined,
+      age: userAge || undefined,
+      gender: userGender || undefined,
+      orientation: userOrientation || undefined,
+      selectedVibes: userSelectedVibes || undefined,
+      interests: userInterests || undefined,
       uniqueInterest: uniqueInterest,
-    });
+      profileCompleted: true,
+    };
+
+    console.log("Saving user profile data:", profileData);
+
+    try {
+      const result = await updateUserProfile(profileData);
+      console.log("Profile saved successfully:", result);
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+    }
+
     navigateToProfileCompletionScreen(); // Navigate to profile completion
   };
 

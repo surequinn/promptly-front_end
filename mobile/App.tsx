@@ -104,15 +104,11 @@ function AppContent() {
   // Update initial screen based on auth state
   useEffect(() => {
     if (clerkLoaded) {
-      if (isSignedIn) {
-        // User is signed in, skip to name input or their last screen
-        setCurrentScreen("NameInput");
-      } else {
-        // User is not signed in, show landing page
-        setCurrentScreen("Landing");
-      }
+      // Always start on the landing page, regardless of auth state
+      // The landing page will handle showing different content based on auth
+      setCurrentScreen("Landing");
     }
-  }, [clerkLoaded, isSignedIn]);
+  }, [clerkLoaded]);
 
   // State to hold user data
   const [userName, setUserName] = useState<string | null>("Jane");

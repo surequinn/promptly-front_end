@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,8 +11,11 @@ import {
   Dimensions,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from "react-native";
 import { SvgXml } from "react-native-svg";
+import { useOAuth, useSignIn, useSignUp } from "@clerk/clerk-expo";
+import * as WebBrowser from "expo-web-browser";
 import { colors, spacing, fonts } from "../theme";
 
 const ombreBackground = require("../../assets/images/ombre_background.png");
@@ -64,6 +67,125 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigateToThanks }) => {
 
   const scaleFactor = height < 700 ? 0.88 : height < 800 ? 0.94 : 1;
   const imageLogoSize = Math.min(width * 0.42, 160) * scaleFactor;
+
+  // Clerk hooks
+  const { startOAuthFlow: startGoogleOAuth } = useOAuth({
+    strategy: "oauth_google",
+  });
+  const { startOAuthFlow: startAppleOAuth } = useOAuth({
+    strategy: "oauth_apple",
+  });
+  const {
+    signIn,
+    setActive: setActiveSignIn,
+    isLoaded: signInLoaded,
+  } = useSignIn();
+  const {
+    signUp,
+    setActive: setActiveSignUp,
+    isLoaded: signUpLoaded,
+  } = useSignUp();
+
+  // State for email authentication
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Warm up the browser for OAuth
+  WebBrowser.maybeCompleteAuthSession();
+
+  // Google OAuth
+  const handleGoogleAuth = async () => {
+    try {
+      setIsLoading(true);
+      const { createdSessionId, setActive } = await startGoogleOAuth();
+
+      if (createdSessionId) {
+        setActive!({ session: createdSessionId });
+        navigateToThanks();
+      }
+    } catch (err) {
+      console.error("OAuth error", err);
+      Alert.alert("Error", "Failed to sign in with Google. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Apple OAuth
+  const handleAppleAuth = async () => {
+    try {
+      setIsLoading(true);
+      const { createdSessionId, setActive } = await startAppleOAuth();
+
+      if (createdSessionId) {
+        setActive!({ session: createdSessionId });
+        navigateToThanks();
+      }
+    } catch (err) {
+      console.error("OAuth error", err);
+      Alert.alert("Error", "Failed to sign in with Apple. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Email authentication (try sign in first, then sign up if user doesn't exist)
+  const handleEmailAuth = async () => {
+    if (!email.trim()) {
+      Alert.alert("Error", "Please enter your email address.");
+      return;
+    }
+
+    if (!signInLoaded || !signUpLoaded) return;
+
+    try {
+      setIsLoading(true);
+
+      // First try to sign in
+      try {
+        const signInAttempt = await signIn.create({
+          identifier: email,
+        });
+
+        // If we need a password, we'll create an account instead
+        if (signInAttempt.status === "needs_first_factor") {
+          // User exists but needs password - for simplicity, we'll redirect to sign up
+          // In a real app, you might want to handle password authentication
+          Alert.alert(
+            "Account exists",
+            "This email is already registered. Please use social login for now."
+          );
+          return;
+        }
+      } catch (signInError: any) {
+        // If sign in fails, try to sign up
+        if (signInError.errors?.[0]?.code === "form_identifier_not_found") {
+          // User doesn't exist, create account
+          const signUpAttempt = await signUp.create({
+            emailAddress: email,
+          });
+
+          // Send verification email
+          await signUpAttempt.prepareEmailAddressVerification({
+            strategy: "email_code",
+          });
+
+          Alert.alert(
+            "Check your email",
+            "We've sent you a verification link. Please check your email and click the link to complete your registration.",
+            [{ text: "OK", onPress: navigateToThanks }]
+          );
+          return;
+        }
+        throw signInError;
+      }
+    } catch (err: any) {
+      console.error("Email auth error", err);
+      Alert.alert("Error", "Failed to process your email. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.rootScreenContainer}>
@@ -149,9 +271,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigateToThanks }) => {
                       {
                         paddingVertical: 14 * scaleFactor,
                         marginBottom: 15 * scaleFactor,
+                        opacity: isLoading ? 0.6 : 1,
                       },
                     ]}
-                    onPress={() => console.log("Google Login")}
+                    onPress={handleGoogleAuth}
+                    disabled={isLoading}
                   >
                     <SvgXml
                       xml={googleIconXml}
@@ -177,9 +301,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigateToThanks }) => {
                       {
                         paddingVertical: 14 * scaleFactor,
                         marginBottom: 30 * scaleFactor,
+                        opacity: isLoading ? 0.6 : 1,
                       },
                     ]}
-                    onPress={() => console.log("Apple Login")}
+                    onPress={handleAppleAuth}
+                    disabled={isLoading}
                   >
                     <SvgXml
                       xml={appleIconXml}
@@ -241,13 +367,20 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigateToThanks }) => {
                       placeholderTextColor={colors.textPlaceholder}
                       keyboardType="email-address"
                       autoCapitalize="none"
+                      value={email}
+                      onChangeText={setEmail}
+                      editable={!isLoading}
                     />
                     <TouchableOpacity
                       style={[
                         styles.emailSubmitButton,
-                        { width: 52 * scaleFactor },
+                        {
+                          width: 52 * scaleFactor,
+                          opacity: isLoading ? 0.6 : 1,
+                        },
                       ]}
-                      onPress={() => console.log("Email Submit")}
+                      onPress={handleEmailAuth}
+                      disabled={isLoading}
                     >
                       <SvgXml
                         xml={arrowIconXml}

@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View, Text } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
+import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
+import { tokenCache } from "@clerk/clerk-expo/token-cache";
 import {
   Inter_200ExtraLight,
   Inter_400Regular,
@@ -64,7 +66,19 @@ export type ScreenName =
   | "RateMyPrompt"
   | "RatingResult";
 
-export default function App() {
+// Get the Clerk publishable key from environment variables
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+
+if (!publishableKey) {
+  throw new Error(
+    "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env"
+  );
+}
+
+// Main app content component that uses Clerk hooks
+function AppContent() {
+  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
+
   const [fontsLoaded, fontError] = useFonts({
     // Inter
     Inter_200ExtraLight,
@@ -86,6 +100,19 @@ export default function App() {
 
   const [appIsReady, setAppIsReady] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<ScreenName>("Landing");
+
+  // Update initial screen based on auth state
+  useEffect(() => {
+    if (clerkLoaded) {
+      if (isSignedIn) {
+        // User is signed in, skip to name input or their last screen
+        setCurrentScreen("NameInput");
+      } else {
+        // User is not signed in, show landing page
+        setCurrentScreen("Landing");
+      }
+    }
+  }, [clerkLoaded, isSignedIn]);
 
   // State to hold user data
   const [userName, setUserName] = useState<string | null>("Jane");
@@ -130,10 +157,10 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if ((fontsLoaded || fontError) && clerkLoaded) {
       setAppIsReady(true);
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, clerkLoaded]);
 
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady) {
@@ -356,6 +383,15 @@ export default function App() {
         />
       )}
     </View>
+  );
+}
+
+// Main App component that wraps everything with ClerkProvider
+export default function App() {
+  return (
+    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+      <AppContent />
+    </ClerkProvider>
   );
 }
 

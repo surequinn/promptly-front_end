@@ -17,6 +17,7 @@ import * as Clipboard from "expo-clipboard";
 import { colors, fonts, fontSizes, spacing } from "@/theme";
 import PromptCard from "@/components/PromptCard";
 import ChangePromptModal from "@/components/modals/ChangePromptModal";
+import { SignOutButton } from "@/components/SignOutButton";
 import { PromptObjectType } from "@/types";
 
 const ombreBackground = require("../../assets/images/ombre_background.png");
@@ -104,7 +105,13 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
               style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
             >
               <View style={styles.headerContainer}>
-                <Text style={styles.titleText}>✨ Magic's done!</Text>
+                <View style={styles.headerTop}>
+                  <Text style={styles.titleText}>✨ Magic's done!</Text>
+                  <SignOutButton
+                    style={styles.signOutButton}
+                    textStyle={styles.signOutText}
+                  />
+                </View>
                 <Text style={styles.subtitleText}>
                   Here are three responses our AI generated. Like one? Hit{" "}
                   <Feather
@@ -197,12 +204,31 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl * scaleFactor,
     width: "100%",
   },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: spacing.md * scaleFactor,
+  },
   titleText: {
     fontFamily: fonts.interSemiBold, // Figma: Inter SemiBold
     fontSize: fontSizes.xxxl * scaleFactor, // Figma: 36px
     color: colors.primary, // Figma: #000000, using primary for consistency
     textAlign: "center",
-    marginBottom: spacing.md * scaleFactor,
+    flex: 1,
+  },
+  signOutButton: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingHorizontal: 12 * scaleFactor,
+    paddingVertical: 6 * scaleFactor,
+    borderRadius: 20,
+  },
+  signOutText: {
+    fontSize: 12 * scaleFactor,
+    color: colors.primary,
   },
   subtitleText: {
     fontFamily: fonts.interMedium,

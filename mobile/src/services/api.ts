@@ -1,9 +1,9 @@
 import { useAuth } from "@clerk/clerk-expo";
 
 // Local development API URL
-const API_BASE_URL = "http://localhost:3000/api";
+const API_BASE_URL = "http://localhost:3001/api";
 
-interface UserProfileData {
+export interface UserProfileData {
   name?: string;
   age?: number;
   gender?: string;
@@ -144,6 +144,12 @@ export const useApiClient = () => {
       ...options.headers,
     };
 
+    console.log(
+      "%c [ `${API_BASE_URL}${url}` ]-148",
+      "font-size:13px; background:pink; color:#bf2c9f;",
+      `${API_BASE_URL}${url}`,
+      JSON.stringify(options.body)
+    );
     const response = await fetch(`${API_BASE_URL}${url}`, {
       ...options,
       headers,
@@ -153,6 +159,11 @@ export const useApiClient = () => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
+    console.log(
+      "%c [ response ]-162",
+      "font-size:13px; background:pink; color:#bf2c9f;",
+      response
+    );
     return response.json();
   };
 

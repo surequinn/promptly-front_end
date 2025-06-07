@@ -1,18 +1,18 @@
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ImageBackground,
-  ScrollView,
-  SafeAreaView,
-  Platform,
-  Dimensions,
-  TextInput,
   Alert,
+  Dimensions,
+  ImageBackground,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
-import { colors, fonts, fontSizes, spacing } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
+import { colors, fonts, fontSizes, spacing } from "../theme";
 
 const ombreBackground = require("../../assets/images/ombre_background.png");
 
@@ -32,6 +32,11 @@ const EnterInterestsScreen: React.FC<EnterInterestsScreenProps> = ({
   const [interestsText, setInterestsText] = useState("");
 
   const validateAndProceed = () => {
+    console.log(
+      "%c [ validateAndProceed ]-35",
+      "font-size:13px; background:pink; color:#bf2c9f;",
+      interestsText
+    );
     const interestsArray = interestsText
       .split(/[,\n]+/)
       .map((interest) => interest.trim())

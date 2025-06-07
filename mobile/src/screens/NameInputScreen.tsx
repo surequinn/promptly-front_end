@@ -1,18 +1,18 @@
+import AlertModal from "@/components/modals/AlertModal";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ImageBackground,
-  ScrollView,
-  SafeAreaView,
-  Platform,
   Dimensions,
+  ImageBackground,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
-  Alert,
+  View,
 } from "react-native";
-import { colors, fonts, fontSizes, spacing } from "../theme";
 import PrimaryButton from "../components/PrimaryButton";
+import { colors, fonts, fontSizes, spacing } from "../theme";
 
 const ombreBackground = require("../../assets/images/ombre_background.png");
 
@@ -30,10 +30,10 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
   navigateToNext,
 }) => {
   const [name, setName] = useState("");
-
+  const [modalVisible, setModalVisible] = useState(false);
   const handleNextPress = () => {
     if (name.trim() === "") {
-      Alert.alert("Name Required", "Please enter your name.");
+      setModalVisible(true);
       return;
     }
     console.log("Name submitted:", name);
@@ -81,6 +81,14 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
           </ScrollView>
         </SafeAreaView>
       </ImageBackground>
+      <AlertModal
+        visible={modalVisible}
+        title="Name Required"
+        message="Please enter your name."
+        onConfirm={() => {
+          setModalVisible(false);
+        }}
+      />
     </View>
   );
 };

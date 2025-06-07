@@ -1,8 +1,8 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import dotenv from "dotenv";
 import { clerkMiddleware } from "@clerk/express";
+import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
+import helmet from "helmet";
 
 // Load environment variables
 dotenv.config();
@@ -18,9 +18,9 @@ for (const envVar of requiredEnvVars) {
 }
 
 // Import routes
+import healthRoutes from "./routes/health";
 import promptRoutes from "./routes/prompts";
 import userRoutes from "./routes/users";
-import healthRoutes from "./routes/health";
 
 const app = express();
 const PORT = process.env.PORT || 3001;

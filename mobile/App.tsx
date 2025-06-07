@@ -1,10 +1,27 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { StyleSheet, View, Text, Platform } from "react-native";
-import * as SplashScreen from "expo-splash-screen";
-import { useFonts } from "expo-font";
+import AgeInputScreen from "@/screens/AgeInputScreen";
+import AuthScreen from "@/screens/AuthScreen";
+import EditPromptScreen from "@/screens/EditPromptScreen";
+import EnterInterestsScreen from "@/screens/EnterInterestsScreen";
+import GenderOrientationScreen from "@/screens/GenderOrientationScreen";
+import GeneratingScreen from "@/screens/GeneratingScreen";
+import LandingPage from "@/screens/LandingPage";
+import NameInputScreen from "@/screens/NameInputScreen";
+import PickYourVibeScreen from "@/screens/PickYourVibeScreen";
+import ProfileCompletionScreen from "@/screens/ProfileCompletionScreen";
+import PromptResultScreen from "@/screens/PromptResultScreen";
+import RateMyPromptScreen from "@/screens/RateMyPromptScreen";
+import RatingResultScreen from "@/screens/RatingResultScreen";
+import ThanksForSigningUpScreen from "@/screens/ThanksForSigningUpScreen";
+import UniqueInterestScreen from "@/screens/UniqueInterestScreen";
+import WriteOrRateScreen from "@/screens/WriteOrRateScreen";
+import { useApiClient, UserProfileData } from "@/services/api";
+import { PromptObjectType } from "@/types";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
-import { useApiClient } from "@/services/api";
+import {
+  Gelasio_600SemiBold,
+  Gelasio_700Bold,
+} from "@expo-google-fonts/gelasio";
 import {
   Inter_200ExtraLight,
   Inter_400Regular,
@@ -13,38 +30,15 @@ import {
   Inter_700Bold,
   Inter_800ExtraBold,
 } from "@expo-google-fonts/inter";
+import { PaytoneOne_400Regular } from "@expo-google-fonts/paytone-one";
 import {
-  PlayfairDisplay_400Regular,
-  PlayfairDisplay_500Medium,
-  PlayfairDisplay_600SemiBold,
   PlayfairDisplay_700Bold,
   PlayfairDisplay_800ExtraBold,
-  PlayfairDisplay_900Black,
 } from "@expo-google-fonts/playfair-display";
-import {
-  Gelasio_400Regular,
-  Gelasio_500Medium,
-  Gelasio_600SemiBold,
-  Gelasio_700Bold,
-} from "@expo-google-fonts/gelasio";
-import { PaytoneOne_400Regular } from "@expo-google-fonts/paytone-one";
-import LandingPage from "@/screens/LandingPage";
-import AuthScreen from "@/screens/AuthScreen";
-import ThanksForSigningUpScreen from "@/screens/ThanksForSigningUpScreen";
-import NameInputScreen from "@/screens/NameInputScreen";
-import AgeInputScreen from "@/screens/AgeInputScreen";
-import GenderOrientationScreen from "@/screens/GenderOrientationScreen";
-import WriteOrRateScreen from "@/screens/WriteOrRateScreen";
-import PickYourVibeScreen from "@/screens/PickYourVibeScreen";
-import EnterInterestsScreen from "@/screens/EnterInterestsScreen";
-import UniqueInterestScreen from "@/screens/UniqueInterestScreen";
-import ProfileCompletionScreen from "@/screens/ProfileCompletionScreen";
-import PromptResultScreen from "@/screens/PromptResultScreen";
-import EditPromptScreen from "@/screens/EditPromptScreen";
-import GeneratingScreen from "@/screens/GeneratingScreen";
-import RateMyPromptScreen from "@/screens/RateMyPromptScreen";
-import RatingResultScreen from "@/screens/RatingResultScreen";
-import { PromptObjectType } from "@/types";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useCallback, useEffect, useState } from "react";
+import { Platform, StyleSheet, Text, View } from "react-native";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -81,7 +75,7 @@ if (!publishableKey) {
 // Main app content component that uses Clerk hooks
 function AppContent() {
   const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
-  const { updateUserProfile } = useApiClient();
+  const { updateUserProfile, getUserProfile } = useApiClient();
 
   // Only load custom fonts on native platforms, use system fonts on web
   const [fontsLoaded, fontError] = useFonts(
@@ -108,14 +102,57 @@ function AppContent() {
 
   const [appIsReady, setAppIsReady] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<ScreenName>("Landing");
+  const [isInitialUserProfileLoaded, setIsInitialUserProfileLoaded] =
+    useState(false);
 
   // Update initial screen based on auth state
   useEffect(() => {
+    const initUserProfile = async () => {
+      const userProfile = await getUserProfile();
+      console.log("User profile:", userProfile);
+      return userProfile.data;
+    };
+    setIsInitialUserProfileLoaded(false);
     if (clerkLoaded) {
-      // Always start at the landing page regardless of auth state
-      setCurrentScreen("Landing");
+      if (isSignedIn) {
+        // request user profile
+        initUserProfile()
+          .then((userProfile: UserProfileData) => {
+            // we set the user profile to the state
+            setUserName(userProfile.name || null);
+            setUserAge(userProfile.age || null);
+            setUserGender(userProfile.gender || null);
+            setUserOrientation(userProfile.orientation || null);
+            setUserSelectedVibes(userProfile.selectedVibes || null);
+            setUserInterests(userProfile.interests || null);
+            setUserUniqueInterest(userProfile.uniqueInterest || null);
+
+            // from userProfile, we should check those user fields and if they are not set, we should navigate to the NameInputScreen
+            if (userProfile.name) {
+              setCurrentScreen("NameInput");
+            } else if (!userProfile.age) {
+              setCurrentScreen("AgeInput");
+            } else if (!userProfile.gender || !userProfile.orientation) {
+              setCurrentScreen("GenderOrientation");
+              // } else if (!userProfile.selectedVibes) {
+              //   setCurrentScreen("PickYourVibe");
+              // } else if (!userProfile.interests) {
+              //   setCurrentScreen("EnterInterests");
+              // } else if (!userProfile.uniqueInterest) {
+              //   setCurrentScreen("UniqueInterest");
+            } else {
+              setCurrentScreen("WriteOrRate");
+            }
+          })
+          .then(() => {
+            setIsInitialUserProfileLoaded(true);
+          });
+      } else {
+        setCurrentScreen("Landing");
+        setIsInitialUserProfileLoaded(true);
+      }
     }
-  }, [clerkLoaded]);
+  }, [clerkLoaded, isSignedIn]);
 
   // Handle font loading and errors - allow app to continue even if fonts fail on web
   useEffect(() => {
@@ -258,28 +295,41 @@ function AppContent() {
   const handleUniqueInterestNext = async (uniqueInterest: string) => {
     setUserUniqueInterest(uniqueInterest);
 
-    const profileData = {
-      name: userName || undefined,
-      age: userAge || undefined,
-      gender: userGender || undefined,
-      orientation: userOrientation || undefined,
-      selectedVibes: userSelectedVibes || undefined,
-      interests: userInterests || undefined,
-      uniqueInterest: uniqueInterest,
-      profileCompleted: true,
-    };
-
-    console.log("Saving user profile data:", profileData);
-
-    try {
-      const result = await updateUserProfile(profileData);
-      console.log("Profile saved successfully:", result);
-    } catch (error) {
-      console.error("Failed to save profile:", error);
-    }
-
     navigateToProfileCompletionScreen(); // Navigate to profile completion
   };
+
+  useEffect(() => {
+    if (!isInitialUserProfileLoaded) return;
+    const update = async () => {
+      const profileData = {
+        name: userName || undefined,
+        age: userAge || undefined,
+        gender: userGender || undefined,
+        orientation: userOrientation || undefined,
+        selectedVibes: userSelectedVibes || undefined,
+        interests: userInterests || undefined,
+        uniqueInterest: userUniqueInterest || undefined,
+        profileCompleted: true,
+      };
+      console.log("Saving user profile data:", profileData);
+      try {
+        const result = await updateUserProfile(profileData);
+        console.log("Profile saved successfully:", result);
+      } catch (error) {
+        console.error("Failed to save profile:", error);
+      }
+    };
+    update();
+  }, [
+    userName,
+    userAge,
+    userGender,
+    userOrientation,
+    userSelectedVibes,
+    userInterests,
+    userUniqueInterest,
+    isInitialUserProfileLoaded,
+  ]);
 
   // Handler for the final step after profile completion
   const handleProfileCompletionNext = () => {
@@ -350,7 +400,11 @@ function AppContent() {
         <ThanksForSigningUpScreen navigateToNext={navigateToNameInputScreen} />
       )}
       {currentScreen === "NameInput" && (
-        <NameInputScreen navigateToNext={navigateToAgeInputScreen} />
+        <NameInputScreen
+          navigateToNext={(name) => {
+            setUserName(name);
+          }}
+        />
       )}
       {currentScreen === "AgeInput" && (
         <AgeInputScreen navigateToNext={navigateToGenderOrientationScreen} />

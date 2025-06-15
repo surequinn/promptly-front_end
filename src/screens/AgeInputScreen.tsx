@@ -60,71 +60,57 @@ const AgeInputScreen: React.FC<AgeInputScreenProps> = ({ navigateToNext }) => {
   };
 
   return (
-    <View style={styles.rootScreenContainer}>
-      <ImageBackground
-        source={ombreBackground}
-        style={styles.backgroundImageFullScreen}
-        imageStyle={styles.fullScreenImageStyle}
-        resizeMode="cover"
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        alwaysBounceVertical={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <SafeAreaView style={styles.safeAreaContentContainer}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            alwaysBounceVertical={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View
-              style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
-            >
-              <View style={styles.mainContent}>
-                <Text style={styles.titleText}>How old are you? 🥳</Text>
+        <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
+          <View style={styles.mainContent}>
+            <Text style={styles.titleText}>How old are you? 🥳</Text>
 
-                <TextInput
-                  style={styles.inputField}
-                  placeholder="Your age ..."
-                  placeholderTextColor={colors.textPlaceholder}
-                  value={age}
-                  onChangeText={handleAgeChange}
-                  keyboardType="number-pad"
-                  maxLength={3} // Redundant due to handleAgeChange but good practice
-                />
-              </View>
+            <TextInput
+              style={styles.inputField}
+              placeholder="Your age ..."
+              placeholderTextColor={colors.textPlaceholder}
+              value={age}
+              onChangeText={handleAgeChange}
+              keyboardType="number-pad"
+              maxLength={3} // Redundant due to handleAgeChange but good practice
+            />
+          </View>
 
-              <PrimaryButton
-                title="Next"
-                onPress={handleNextPress}
-                style={styles.nextButton}
-              />
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </ImageBackground>
+          <PrimaryButton
+            title="Next"
+            onPress={handleNextPress}
+            style={styles.nextButton}
+          />
+        </View>
+      </ScrollView>
       <AlertModal
         visible={alertVisible}
         title={alertTitle}
         message={alertMessage}
         onConfirm={() => setAlertVisible(false)}
       />
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  rootScreenContainer: {
-    flex: 1,
-    backgroundColor: colors.primaryMuted,
-  },
   backgroundImageFullScreen: {
     flex: 1,
   },
   fullScreenImageStyle: {
     width: "100%",
     height: "100%",
-  },
-  safeAreaContentContainer: {
-    flex: 1,
-    backgroundColor: "transparent",
   },
   scrollContainer: {
     flexGrow: 1,

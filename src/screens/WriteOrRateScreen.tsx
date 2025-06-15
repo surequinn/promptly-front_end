@@ -70,138 +70,124 @@ const WriteOrRateScreen: React.FC<WriteOrRateScreenProps> = ({
   };
 
   return (
-    <View style={styles.rootScreenContainer}>
-      <ImageBackground
-        source={ombreBackground}
-        style={styles.backgroundImageFullScreen}
-        imageStyle={styles.fullScreenImageStyle}
-        resizeMode="cover"
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        alwaysBounceVertical={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <SafeAreaView style={styles.safeAreaContentContainer}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            alwaysBounceVertical={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View
-              style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
+        <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
+          <View style={styles.mainContent}>
+            <Text style={styles.titleText}>
+              Need a hand with your Hinge prompt?
+            </Text>
+
+            {/* Option 1: Write */}
+            <TouchableOpacity
+              style={[styles.choiceButtonBase, getChoiceButtonStyle("write")]}
+              onPress={() => setSelectedOption("write")}
+              activeOpacity={0.7}
             >
-              <View style={styles.mainContent}>
-                <Text style={styles.titleText}>
-                  Need a hand with your Hinge prompt?
-                </Text>
-
-                {/* Option 1: Write */}
-                <TouchableOpacity
-                  style={[
-                    styles.choiceButtonBase,
-                    getChoiceButtonStyle("write"),
+              {selectedOption === "write" ? (
+                <LinearGradient
+                  colors={[
+                    colors.buttonGradientStop1,
+                    colors.buttonGradientStop2,
                   ]}
-                  onPress={() => setSelectedOption("write")}
-                  activeOpacity={0.7}
+                  style={styles.gradientBackground}
                 >
-                  {selectedOption === "write" ? (
-                    <LinearGradient
-                      colors={[
-                        colors.buttonGradientStop1,
-                        colors.buttonGradientStop2,
-                      ]}
-                      style={styles.gradientBackground}
-                    >
-                      <Text style={getChoiceSubTextStyle("write")}>
-                        Let our AI make you shine:
-                      </Text>
-                      <Text style={getChoiceMainTextStyle("write")}>
-                        Write a response for me
-                      </Text>
-                    </LinearGradient>
-                  ) : (
-                    <>
-                      <Text style={getChoiceSubTextStyle("write")}>
-                        Let our AI make you shine:
-                      </Text>
-                      <Text style={getChoiceMainTextStyle("write")}>
-                        Write a response for me
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  <Text style={getChoiceSubTextStyle("write")}>
+                    Let our AI make you shine:
+                  </Text>
+                  <Text style={getChoiceMainTextStyle("write")}>
+                    Write a response for me
+                  </Text>
+                </LinearGradient>
+              ) : (
+                <>
+                  <Text style={getChoiceSubTextStyle("write")}>
+                    Let our AI make you shine:
+                  </Text>
+                  <Text style={getChoiceMainTextStyle("write")}>
+                    Write a response for me
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
 
-                {/* Option 2: Rate */}
-                <TouchableOpacity
-                  style={[
-                    styles.choiceButtonBase,
-                    getChoiceButtonStyle("rate"),
-                    { marginTop: spacing.lg * scaleFactor },
+            {/* Option 2: Rate */}
+            <TouchableOpacity
+              style={[
+                styles.choiceButtonBase,
+                getChoiceButtonStyle("rate"),
+                { marginTop: spacing.lg * scaleFactor },
+              ]}
+              onPress={() => setSelectedOption("rate")}
+              activeOpacity={0.7}
+            >
+              {selectedOption === "rate" ? (
+                <LinearGradient
+                  colors={[
+                    colors.buttonGradientStop1,
+                    colors.buttonGradientStop2,
                   ]}
-                  onPress={() => setSelectedOption("rate")}
-                  activeOpacity={0.7}
+                  style={styles.gradientBackground}
                 >
-                  {selectedOption === "rate" ? (
-                    <LinearGradient
-                      colors={[
-                        colors.buttonGradientStop1,
-                        colors.buttonGradientStop2,
-                      ]}
-                      style={styles.gradientBackground}
-                    >
-                      <Text style={getChoiceSubTextStyle("rate")}>
-                        Already have one? Let's rate and refine it:
-                      </Text>
-                      <Text style={getChoiceMainTextStyle("rate")}>
-                        Rate my response
-                      </Text>
-                    </LinearGradient>
-                  ) : (
-                    <>
-                      <Text style={getChoiceSubTextStyle("rate")}>
-                        Already have one? Let's rate and refine it:
-                      </Text>
-                      <Text style={getChoiceMainTextStyle("rate")}>
-                        Rate my response
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  <Text style={getChoiceSubTextStyle("rate")}>
+                    Already have one? Let's rate and refine it:
+                  </Text>
+                  <Text style={getChoiceMainTextStyle("rate")}>
+                    Rate my response
+                  </Text>
+                </LinearGradient>
+              ) : (
+                <>
+                  <Text style={getChoiceSubTextStyle("rate")}>
+                    Already have one? Let's rate and refine it:
+                  </Text>
+                  <Text style={getChoiceMainTextStyle("rate")}>
+                    Rate my response
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
 
-                <Text style={styles.infoText}>
-                  Takes less than a minute. Give it a try, and you won't regret
-                  it!
-                </Text>
-              </View>
+            <Text style={styles.infoText}>
+              Takes less than a minute. Give it a try, and you won't regret it!
+            </Text>
+          </View>
 
-              <PrimaryButton
-                title="Next"
-                onPress={handleNextPress}
-                style={styles.nextButton}
-              />
+          <PrimaryButton
+            title="Next"
+            onPress={handleNextPress}
+            style={styles.nextButton}
+          />
 
-              <TouchableOpacity
-                style={styles.signOutButton}
-                onPress={() => signOut()}
-              >
-                <Text style={styles.signOutText}>Sign Out (for testing)</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </ImageBackground>
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={() => signOut()}
+          >
+            <Text style={styles.signOutText}>Sign Out (for testing)</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
       <AlertModal
         visible={alertVisible}
         title={alertTitle}
         message={alertMessage}
         onConfirm={() => setAlertVisible(false)}
       />
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  rootScreenContainer: {
-    flex: 1,
-    backgroundColor: colors.primaryMuted,
-  },
   backgroundImageFullScreen: {
     flex: 1,
   },
@@ -209,15 +195,12 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  safeAreaContentContainer: {
-    flex: 1,
-    backgroundColor: "transparent",
-  },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: spacing.xl * scaleFactor,
+    paddingTop: 120,
+    paddingBottom: spacing.xl * scaleFactor,
   },
   contentView: {
     width: "100%",

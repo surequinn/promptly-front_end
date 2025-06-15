@@ -61,80 +61,63 @@ const EnterInterestsScreen: React.FC<EnterInterestsScreenProps> = ({
   };
 
   return (
-    <View style={styles.rootScreenContainer}>
-      <ImageBackground
-        source={ombreBackground}
-        style={styles.backgroundImageFullScreen}
-        imageStyle={styles.fullScreenImageStyle}
-        resizeMode="cover"
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        alwaysBounceVertical={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <SafeAreaView style={styles.safeAreaContentContainer}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            alwaysBounceVertical={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View
-              style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
-            >
-              <View style={styles.mainContent}>
-                <Text style={styles.titleText}>
-                  What are your interests? 🤔
-                </Text>
-                <Text style={styles.subtitle1Text}>Give us at least 3!</Text>
-                <Text style={styles.instructionText}>
-                  We're not looking for a resume — just 3 things you genuinely
-                  enjoy. Could be something classic or something random like
-                  collecting passport stamps or building playlists for every
-                  mood.
-                </Text>
+        <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
+          <View style={styles.mainContent}>
+            <Text style={styles.titleText}>What are your interests? 🤔</Text>
+            <Text style={styles.subtitle1Text}>Give us at least 3!</Text>
+            <Text style={styles.instructionText}>
+              We're not looking for a resume — just 3 things you genuinely
+              enjoy. Could be something classic or something random like
+              collecting passport stamps or building playlists for every mood.
+            </Text>
 
-                <TextInput
-                  style={styles.interestsInput}
-                  placeholder="E.g. I love cooking, tennis, writing"
-                  placeholderTextColor={colors.textPlaceholder}
-                  value={interestsText}
-                  onChangeText={setInterestsText}
-                  multiline={true}
-                  textAlignVertical="top" // Align placeholder and text to top for multiline
-                />
-              </View>
+            <TextInput
+              style={styles.interestsInput}
+              placeholder="E.g. I love cooking, tennis, writing"
+              placeholderTextColor={colors.textPlaceholder}
+              value={interestsText}
+              onChangeText={setInterestsText}
+              multiline={true}
+              textAlignVertical="top" // Align placeholder and text to top for multiline
+            />
+          </View>
 
-              <PrimaryButton
-                title="Next"
-                onPress={validateAndProceed}
-                style={styles.nextButton}
-              />
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </ImageBackground>
+          <PrimaryButton
+            title="Next"
+            onPress={validateAndProceed}
+            style={styles.nextButton}
+          />
+        </View>
+      </ScrollView>
       <AlertModal
         visible={alertVisible}
         title={alertTitle}
         message={alertMessage}
         onConfirm={() => setAlertVisible(false)}
       />
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  rootScreenContainer: {
-    flex: 1,
-    backgroundColor: colors.primaryMuted,
-  },
   backgroundImageFullScreen: {
     flex: 1,
   },
   fullScreenImageStyle: {
     width: "100%",
     height: "100%",
-  },
-  safeAreaContentContainer: {
-    flex: 1,
-    backgroundColor: "transparent",
   },
   scrollContainer: {
     flexGrow: 1,

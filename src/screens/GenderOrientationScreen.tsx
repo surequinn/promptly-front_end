@@ -68,87 +68,73 @@ const GenderOrientationScreen: React.FC<GenderOrientationScreenProps> = ({
   };
 
   return (
-    <View style={styles.rootScreenContainer}>
-      <ImageBackground
-        source={ombreBackground}
-        style={styles.backgroundImageFullScreen}
-        imageStyle={styles.fullScreenImageStyle}
-        resizeMode="cover"
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        alwaysBounceVertical={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <SafeAreaView style={styles.safeAreaContentContainer}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            alwaysBounceVertical={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View
-              style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
-            >
-              <View style={styles.mainContent}>
-                <View style={styles.sectionContainer}>
-                  <Text style={styles.titleText}>You are a...</Text>
-                  <View style={styles.optionsRowContainer}>
-                    {GENDER_OPTIONS.map((gender) => (
-                      <SelectableButton
-                        key={`gender-${gender}`}
-                        title={gender}
-                        isSelected={selectedGender === gender}
-                        onPress={() => setSelectedGender(gender)}
-                      />
-                    ))}
-                  </View>
-                </View>
-
-                <View style={styles.sectionContainer}>
-                  <Text style={styles.titleText}>You are interested in...</Text>
-                  <View style={styles.optionsRowContainer}>
-                    {ORIENTATION_OPTIONS.map((orientation) => (
-                      <SelectableButton
-                        key={`orientation-${orientation}`}
-                        title={orientation}
-                        isSelected={selectedOrientation.includes(orientation)}
-                        onPress={() => toggleOrientation(orientation)}
-                      />
-                    ))}
-                  </View>
-                </View>
+        <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
+          <View style={styles.mainContent}>
+            <View style={styles.sectionContainer}>
+              <Text style={styles.titleText}>You are a...</Text>
+              <View style={styles.optionsRowContainer}>
+                {GENDER_OPTIONS.map((gender) => (
+                  <SelectableButton
+                    key={`gender-${gender}`}
+                    title={gender}
+                    isSelected={selectedGender === gender}
+                    onPress={() => setSelectedGender(gender)}
+                  />
+                ))}
               </View>
-
-              <PrimaryButton
-                title="Next"
-                onPress={handleNextPress}
-                style={styles.nextButton}
-              />
             </View>
-          </ScrollView>
-        </SafeAreaView>
-      </ImageBackground>
+
+            <View style={styles.sectionContainer}>
+              <Text style={styles.titleText}>You are interested in...</Text>
+              <View style={styles.optionsRowContainer}>
+                {ORIENTATION_OPTIONS.map((orientation) => (
+                  <SelectableButton
+                    key={`orientation-${orientation}`}
+                    title={orientation}
+                    isSelected={selectedOrientation.includes(orientation)}
+                    onPress={() => toggleOrientation(orientation)}
+                  />
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <PrimaryButton
+            title="Next"
+            onPress={handleNextPress}
+            style={styles.nextButton}
+          />
+        </View>
+      </ScrollView>
       <AlertModal
         visible={alertVisible}
         title={alertTitle}
         message={alertMessage}
         onConfirm={() => setAlertVisible(false)}
       />
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  rootScreenContainer: {
-    flex: 1,
-    backgroundColor: colors.primaryMuted,
-  },
   backgroundImageFullScreen: {
     flex: 1,
   },
   fullScreenImageStyle: {
     width: "100%",
     height: "100%",
-  },
-  safeAreaContentContainer: {
-    flex: 1,
-    backgroundColor: "transparent",
   },
   scrollContainer: {
     flexGrow: 1,

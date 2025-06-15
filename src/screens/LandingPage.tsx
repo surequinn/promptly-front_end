@@ -15,7 +15,6 @@ import {
 } from "react-native";
 
 const ombreBackground = require("../../assets/images/ombre_background.png");
-const hingeLikeIcon = require("../../assets/images/hinge_like.png");
 
 const { width, height } = Dimensions.get("window");
 const isWebApp = Platform.OS === "web";
@@ -139,7 +138,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSkip }) => {
 
         <View style={styles.likeButtonContainer}>
           <TouchableOpacity style={styles.likeButton} activeOpacity={0.8}>
-            <Image source={hingeLikeIcon} style={styles.likeIcon} />
+            <Image
+              source={require("../../assets/images/hinge_like.png")}
+              style={styles.likeIcon}
+            />
           </TouchableOpacity>
         </View>
       </View>

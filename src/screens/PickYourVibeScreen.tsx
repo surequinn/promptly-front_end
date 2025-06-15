@@ -75,95 +75,81 @@ const PickYourVibeScreen: React.FC<PickYourVibeScreenProps> = ({
   };
 
   return (
-    <View style={styles.rootScreenContainer}>
-      <ImageBackground
-        source={ombreBackground}
-        style={styles.backgroundImageFullScreen}
-        imageStyle={styles.fullScreenImageStyle}
-        resizeMode="cover"
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        alwaysBounceVertical={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <SafeAreaView style={styles.safeAreaContentContainer}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            alwaysBounceVertical={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View
-              style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
-            >
-              <View style={styles.mainContent}>
-                <Text style={styles.titleText}>Pick your vibe ✨</Text>
-                <Text style={styles.subtitleText}>
-                  Choose one or more tones you like from the list below.
-                </Text>
+        <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
+          <View style={styles.mainContent}>
+            <Text style={styles.titleText}>Pick your vibe ✨</Text>
+            <Text style={styles.subtitleText}>
+              Choose one or more tones you like from the list below.
+            </Text>
 
-                <View style={styles.vibesContainer}>
-                  {VIBE_OPTIONS.map((vibe) => (
-                    <SelectableButton
-                      key={vibe}
-                      title={vibe}
-                      isSelected={selectedVibes.includes(vibe)}
-                      onPress={() => toggleVibe(vibe)}
-                      useGradientWhenSelected={true}
-                      gradientColors={[
-                        colors.buttonGradientStop1,
-                        colors.buttonGradientStop2,
-                      ]}
-                      style={
-                        selectedVibes.includes(vibe)
-                          ? styles.vibeButtonSelected
-                          : styles.vibeButtonUnselected
-                      }
-                      textStyle={
-                        selectedVibes.includes(vibe)
-                          ? styles.vibeTextSelected
-                          : styles.vibeTextUnselected
-                      }
-                    />
-                  ))}
-                </View>
-
-                <Text style={styles.infoText}>
-                  Go with whatever feels most "you." We'll do the rest.
-                </Text>
-              </View>
-
-              <PrimaryButton
-                title="Next"
-                onPress={handleNextPress}
-                style={styles.nextButton}
-                disabled={selectedVibes.length === 0}
-              />
+            <View style={styles.vibesContainer}>
+              {VIBE_OPTIONS.map((vibe) => (
+                <SelectableButton
+                  key={vibe}
+                  title={vibe}
+                  isSelected={selectedVibes.includes(vibe)}
+                  onPress={() => toggleVibe(vibe)}
+                  useGradientWhenSelected={true}
+                  gradientColors={[
+                    colors.buttonGradientStop1,
+                    colors.buttonGradientStop2,
+                  ]}
+                  style={
+                    selectedVibes.includes(vibe)
+                      ? styles.vibeButtonSelected
+                      : styles.vibeButtonUnselected
+                  }
+                  textStyle={
+                    selectedVibes.includes(vibe)
+                      ? styles.vibeTextSelected
+                      : styles.vibeTextUnselected
+                  }
+                />
+              ))}
             </View>
-          </ScrollView>
-        </SafeAreaView>
-      </ImageBackground>
+
+            <Text style={styles.infoText}>
+              Go with whatever feels most "you." We'll do the rest.
+            </Text>
+          </View>
+
+          <PrimaryButton
+            title="Next"
+            onPress={handleNextPress}
+            style={styles.nextButton}
+            disabled={selectedVibes.length === 0}
+          />
+        </View>
+      </ScrollView>
       <AlertModal
         visible={alertVisible}
         title={alertTitle}
         message={alertMessage}
         onConfirm={() => setAlertVisible(false)}
       />
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  rootScreenContainer: {
-    flex: 1,
-    backgroundColor: colors.primaryMuted,
-  },
   backgroundImageFullScreen: {
     flex: 1,
   },
   fullScreenImageStyle: {
     width: "100%",
     height: "100%",
-  },
-  safeAreaContentContainer: {
-    flex: 1,
-    backgroundColor: "transparent",
   },
   scrollContainer: {
     flexGrow: 1,

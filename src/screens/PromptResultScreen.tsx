@@ -140,82 +140,74 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
   };
 
   return (
-    <View style={styles.rootScreenContainer}>
-      <ImageBackground
-        source={ombreBackground}
-        style={styles.backgroundImageFullScreen}
-        imageStyle={styles.fullScreenImageStyle}
-        resizeMode="cover"
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
       >
-        <SafeAreaView style={styles.safeAreaContentContainer}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-          >
-            <View
-              style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
-            >
-              <View style={styles.headerContainer}>
-                <View style={styles.headerTop}>
-                  <Text style={styles.titleText}>✨ Magic's done!</Text>
-                  <SignOutButton
-                    style={styles.signOutButton}
-                    textStyle={styles.signOutText}
-                  />
-                </View>
-                <Text style={styles.subtitleText}>
-                  Here are three responses our AI generated. Like one? Hit{" "}
-                  <Feather
-                    name="copy"
-                    size={fontSizes.md * scaleFactor}
-                    color={colors.primary}
-                  />{" "}
-                  to copy. Want to tweak it? Tap{" "}
-                  <Feather
-                    name="edit-2"
-                    size={fontSizes.md * scaleFactor}
-                    color={colors.primary}
-                  />{" "}
-                  to add your thoughts.
-                </Text>
-              </View>
-
-              <View style={styles.promptsListContainer}>
-                {promptsToRender.map((prompt) => (
-                  <PromptCard
-                    key={prompt.id}
-                    promptId={prompt.id}
-                    category={prompt.category}
-                    responseText={prompt.responseText}
-                    onCopy={() => handleCopy(prompt.responseText, prompt.id)}
-                    onEdit={() => handleEdit(prompt)}
-                    onSave={(id, category, responseText) =>
-                      handleSave(id, category, responseText)
-                    }
-                  />
-                ))}
-              </View>
-
-              <TouchableOpacity
-                style={styles.changePromptButton}
-                onPress={handleChangePrompt}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={["#8655D5", "#A585EF"]} // Figma: fill_GUGYUW
-                  style={styles.changePromptGradient}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                >
-                  <Text style={styles.changePromptButtonText}>
-                    Change Prompt
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
+        <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
+          <View style={styles.headerContainer}>
+            <View style={styles.headerTop}>
+              <Text style={styles.titleText}>✨ Magic's done!</Text>
+              <SignOutButton
+                style={styles.signOutButton}
+                textStyle={styles.signOutText}
+              />
             </View>
-          </ScrollView>
-        </SafeAreaView>
-      </ImageBackground>
+            <Text style={styles.subtitleText}>
+              Here are three responses our AI generated. Like one? Hit{" "}
+              <Feather
+                name="copy"
+                size={fontSizes.md * scaleFactor}
+                color={colors.primary}
+              />{" "}
+              to copy. Want to tweak it? Tap{" "}
+              <Feather
+                name="edit-2"
+                size={fontSizes.md * scaleFactor}
+                color={colors.primary}
+              />{" "}
+              to add your thoughts.
+            </Text>
+          </View>
+
+          <View style={styles.promptsListContainer}>
+            {promptsToRender.map((prompt) => (
+              <PromptCard
+                key={prompt.id}
+                promptId={prompt.id}
+                category={prompt.category}
+                responseText={prompt.responseText}
+                onCopy={() => handleCopy(prompt.responseText, prompt.id)}
+                onEdit={() => handleEdit(prompt)}
+                onSave={(id, category, responseText) =>
+                  handleSave(id, category, responseText)
+                }
+              />
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={styles.changePromptButton}
+            onPress={handleChangePrompt}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={["#8655D5", "#A585EF"]} // Figma: fill_GUGYUW
+              style={styles.changePromptGradient}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+            >
+              <Text style={styles.changePromptButtonText}>Change Prompt</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
       <ChangePromptModal
         isVisible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
@@ -227,25 +219,17 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
         message={alertMessage}
         onConfirm={() => setAlertVisible(false)}
       />
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  rootScreenContainer: {
-    flex: 1,
-  },
   backgroundImageFullScreen: {
     flex: 1,
   },
   fullScreenImageStyle: {
     width: "100%",
     height: "100%",
-  },
-  safeAreaContentContainer: {
-    flex: 1,
-    backgroundColor: "transparent",
-    justifyContent: "center",
   },
   scrollContainer: {
     flexGrow: 1,

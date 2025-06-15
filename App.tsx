@@ -19,7 +19,7 @@ import VerificationScreen from "@/screens/VerificationScreen";
 import WriteOrRateScreen from "@/screens/WriteOrRateScreen";
 import { useApiClient, UserProfileData } from "@/services/api";
 import { PromptObjectType } from "@/types";
-import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
+import { ClerkProvider, SignedIn, SignedOut, useAuth } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
 import {
   Gelasio_600SemiBold,
@@ -42,6 +42,12 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useCallback, useEffect, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
+import Header from "@/components/common/Header";
+import SettingsDropdown from "@/components/common/SettingsDropdown";
+import ContactUsScreen from "@/screens/ContactUsScreen";
+import ScreenWrapper from "@/components/common/ScreenWrapper";
+import AccountSettingsScreen from "@/screens/AccountSettingsScreen";
+import RatingNextStepScreen, { NextStep } from "@/screens/RatingNextStepScreen";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -63,9 +69,12 @@ export type ScreenName =
   | "Generating"
   | "RateMyPrompt"
   | "RatingResult"
-  | "Verification";
+  | "Verification"
+  | "AccountSettings"
+  | "ContactUs"
+  | "RatingNextStep";
 
-// Get the Clerk publishable key from environment variables or expo config
+// Get the Clerk publishable key
 const publishableKey =
   process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
   "pk_test_ZXhwZXJ0LWdvcGhlci0yNS5jbGVyay5hY2NvdW50cy5kZXYk";
@@ -76,110 +85,117 @@ if (!publishableKey) {
   );
 }
 
-// Main app content component that uses Clerk hooks
-function AppContent() {
-  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
+// Component for the Signed-Out flow (Landing, Auth, Verification)
+function AuthFlow() {
+  const [currentScreen, setCurrentScreen] = useState<
+    "Landing" | "Auth" | "Verification"
+  >("Landing");
+  const [verificationSession, setVerificationSession] = useState<any>(null);
+  const [navigationHistory, setNavigationHistory] = useState<string[]>([
+    "Landing",
+  ]);
+
+  const navigate = (screen: "Auth" | "Verification") => {
+    setNavigationHistory((prev) => [...prev, screen]);
+    setCurrentScreen(screen);
+  };
+
+  const goBack = () => {
+    if (navigationHistory.length > 1) {
+      const newHistory = navigationHistory.slice(0, -1);
+      setNavigationHistory(newHistory);
+      setCurrentScreen(
+        newHistory[newHistory.length - 1] as "Landing" | "Auth" | "Verification"
+      );
+    }
+  };
+
+  const navigateToAuthScreen = () => navigate("Auth");
+
+  const handleRequireVerification = (session: any) => {
+    setVerificationSession(session);
+    navigate("Verification");
+  };
+
+  const handleVerificationNext = async (code: string) => {
+    if (!verificationSession) return;
+    try {
+      const strategy = verificationSession.supportedFirstFactors.find(
+        (ff: any) => ff.strategy === "email_code"
+      );
+
+      if (strategy) {
+        // Sign-in attempt
+        const completeSignIn = await verificationSession.attemptFirstFactor({
+          strategy: "email_code",
+          code,
+        });
+        if (completeSignIn.status === "complete") {
+          // This will trigger the <SignedIn> component to render
+        }
+      } else {
+        // Sign-up attempt
+        const completeSignUp =
+          await verificationSession.attemptEmailAddressVerification({
+            code,
+          });
+        if (completeSignUp.status === "complete") {
+          // This will trigger the <SignedIn> component to render
+        }
+      }
+    } catch (err: any) {
+      console.error(
+        "Verification error",
+        err.errors ? JSON.stringify(err.errors) : err
+      );
+      // You can show an alert here
+    }
+  };
+
+  let screenContent;
+  switch (currentScreen) {
+    case "Landing":
+      screenContent = <LandingPage onSkip={navigateToAuthScreen} />;
+      break;
+    case "Auth":
+      screenContent = (
+        <AuthScreen
+          navigateToThanks={() => {}} // Thanks screen is not needed here
+          navigateToVerification={handleRequireVerification}
+        />
+      );
+      break;
+    case "Verification":
+      screenContent = (
+        <>
+          <Header onBack={goBack} hideSettings />
+          <VerificationScreen onNext={handleVerificationNext} onBack={goBack} />
+        </>
+      );
+      break;
+    default:
+      screenContent = <LandingPage onSkip={navigateToAuthScreen} />;
+  }
+  return screenContent;
+}
+
+// Component for the Signed-In flow (main app)
+function MainApp() {
   const { updateUserProfile, getUserProfile } = useApiClient();
 
-  useGoogleFontsLink();
-
-  // Only load custom fonts on native platforms, use system fonts on web
-  const [fontsLoaded, fontError] = useFonts(
-    Platform.OS === "web"
-      ? {}
-      : {
-          // Inter
-          Inter_200ExtraLight,
-          Inter_400Regular,
-          Inter_500Medium,
-          Inter_600SemiBold,
-          Inter_700Bold,
-          Inter_800ExtraBold,
-          // Playfair Display (matching what we have in typography.ts)
-          PlayfairDisplay_700Bold,
-          PlayfairDisplay_800ExtraBold,
-          // Gelasio (matching what we have in typography.ts)
-          Gelasio_600SemiBold,
-          Gelasio_700Bold,
-          // Paytone One
-          PaytoneOne_400Regular,
-        }
-  );
-
-  const [appIsReady, setAppIsReady] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState<ScreenName>("Landing");
+  // --- DEVELOPER START PAGE ---
+  // To test a specific screen, set it as the initial screen here and comment out the
+  // `useEffect` below that handles profile-based navigation.
+  const [currentScreen, setCurrentScreen] = useState<ScreenName>("WriteOrRate");
+  const [navigationHistory, setNavigationHistory] = useState<ScreenName[]>([
+    "WriteOrRate",
+  ]);
   const [isInitialUserProfileLoaded, setIsInitialUserProfileLoaded] =
-    useState(false);
-  const [verificationSession, setVerificationSession] = useState<any>(null); // Store Clerk session or identifier for verification
-  const [alertVisible, setAlertVisible] = useState(false);
-  const [alertTitle, setAlertTitle] = useState("");
-  const [alertMessage, setAlertMessage] = useState("");
+    useState(true); // Bypass loading screen for testing
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
 
-  // Update initial screen based on auth state
-  useEffect(() => {
-    const initUserProfile = async () => {
-      const userProfile = await getUserProfile();
-      console.log("User profile:", userProfile);
-      return userProfile.data;
-    };
-    setIsInitialUserProfileLoaded(false);
-    if (clerkLoaded) {
-      if (isSignedIn) {
-        // request user profile
-        initUserProfile()
-          .then((userProfile: UserProfileData) => {
-            // we set the user profile to the state
-            setUserName(userProfile.name || null);
-            setUserAge(userProfile.age || null);
-            setUserGender(userProfile.gender || null);
-            setUserOrientation(userProfile.orientation || null);
-            setUserSelectedVibes(userProfile.selectedVibes || null);
-            setUserInterests(userProfile.interests || null);
-            setUserUniqueInterest(userProfile.uniqueInterest || null);
-
-            // from userProfile, we should check those user fields and if they are not set, we should navigate to the NameInputScreen
-            if (!userProfile.name) {
-              setCurrentScreen("NameInput");
-            } else if (!userProfile.age) {
-              setCurrentScreen("AgeInput");
-            } else if (!userProfile.gender || !userProfile.orientation) {
-              setCurrentScreen("GenderOrientation");
-              // } else if (!userProfile.selectedVibes) {
-              //   setCurrentScreen("PickYourVibe");
-              // } else if (!userProfile.interests) {
-              //   setCurrentScreen("EnterInterests");
-              // } else if (!userProfile.uniqueInterest) {
-              //   setCurrentScreen("UniqueInterest");
-            } else {
-              setCurrentScreen("WriteOrRate");
-            }
-          })
-          .then(() => {
-            setIsInitialUserProfileLoaded(true);
-          });
-      } else {
-        setCurrentScreen("Landing");
-      }
-    }
-  }, [clerkLoaded, isSignedIn]);
-
-  // Handle font loading and errors - allow app to continue even if fonts fail on web
-  useEffect(() => {
-    // On web, skip font loading entirely and just wait for Clerk
-    if (Platform.OS === "web") {
-      if (clerkLoaded) {
-        setAppIsReady(true);
-      }
-    } else {
-      // On native, wait for both fonts and Clerk
-      if (clerkLoaded && (fontsLoaded || fontError)) {
-        setAppIsReady(true);
-      }
-    }
-  }, [fontsLoaded, fontError, clerkLoaded]);
-
-  // State to hold user data
-  const [userName, setUserName] = useState<string | null>("Jane");
+  // User data state
+  const [userName, setUserName] = useState<string | null>(null);
   const [userAge, setUserAge] = useState<number | null>(null);
   const [userGender, setUserGender] = useState<string | null>(null);
   const [userOrientation, setUserOrientation] = useState<string[] | null>(null);
@@ -190,158 +206,92 @@ function AppContent() {
   const [userUniqueInterest, setUserUniqueInterest] = useState<string | null>(
     null
   );
-  const [promptToEdit, setPromptToEdit] = useState<PromptObjectType | null>({
-    id: "1",
-    category: "Dating me is like...",
-    responseText:
-      "Finding a parking spot right in front of the store on a busy day—unexpectedly perfect and makes you feel like you've won.",
-    userId: "1",
-    aiGenerated: true,
-    status: "active",
-    createdAt: new Date().toISOString(),
-  });
-  const [dummyRatedPrompt] = useState<PromptObjectType>({
-    id: "user-1",
-    category: "Together, we could...",
-    responseText:
-      "Finally figure out what the dog is thinking. And also, maybe travel.",
-    userId: "1",
-    aiGenerated: true,
-    status: "active",
-    createdAt: new Date().toISOString(),
-  });
-  const [dummyRating] = useState({
-    score: "7/10",
-    explanation: [
-      {
-        title: "Strong Start!",
-        body: "Great opening! It's quirky and immediately shows off your sense of humor. The idea of figuring out what a dog is thinking is a fun, universal concept that many people can relate to.",
-      },
-      {
-        title: "Room for a Little More 'You'",
-        body: "The second part, 'maybe travel,' feels a bit generic. It's a common interest, which is fine, but it doesn't add as much personality as the first part. What kind of travel excites you? A spontaneous road trip? Visiting every ramen shop in Tokyo? Getting more specific can make your response even more memorable.",
-      },
-      {
-        title: "The Verdict",
-        body: "This is a solid, engaging response that's likely to get a smile. To elevate it, consider replacing the travel line with another unique, specific idea that complements the humor of the first part. Keep up the great work!",
-      },
-    ],
-  });
+  const [promptToEdit, setPromptToEdit] = useState<PromptObjectType | null>(
+    null
+  );
+  const [promptToRate, setPromptToRate] = useState<{
+    prompt: string;
+    response: string;
+  } | null>(null);
 
-  const onLayoutRootView = useCallback(async () => {
-    if (appIsReady) {
-      await SplashScreen.hideAsync();
-    }
-  }, [appIsReady]);
-
-  const navigateToLandingScreen = () => setCurrentScreen("Landing");
-  const navigateToAuthScreen = () => setCurrentScreen("Auth");
-  const navigateToThanksScreen = () => setCurrentScreen("Thanks");
-
-  const navigateToNameInputScreen = () => setCurrentScreen("NameInput");
-
-  const navigateToAgeInputScreen = (name: string) => {
-    setUserName(name);
-    setCurrentScreen("AgeInput");
-  };
-
-  const navigateToGenderOrientationScreen = (age: number) => {
-    setUserAge(age);
-    setCurrentScreen("GenderOrientation");
-  };
-
-  const navigateToWriteOrRateScreen = (
-    gender: string,
-    orientation: string[]
-  ) => {
-    setUserGender(gender);
-    setUserOrientation(orientation);
-    setCurrentScreen("WriteOrRate");
-  };
-
-  const navigateToPickYourVibeScreen = () => {
-    setCurrentScreen("PickYourVibe");
-  };
-
-  const navigateToEnterInterestsScreen = (selectedVibes: string[]) => {
-    setUserSelectedVibes(selectedVibes);
-    setCurrentScreen("EnterInterests");
-  };
-
-  const navigateToUniqueInterestScreen = () => {
-    setCurrentScreen("UniqueInterest");
-  };
-
-  const navigateToProfileCompletionScreen = () => {
-    setCurrentScreen("ProfileCompletion");
-  };
-
-  const navigateToPromptResultScreen = () => {
-    setCurrentScreen("PromptResult");
-  };
-
-  const navigateToEditPromptScreen = (prompt: PromptObjectType) => {
-    setPromptToEdit(prompt);
-    setCurrentScreen("EditPrompt");
-  };
-
-  const navigateToGeneratingScreen = () => {
-    setCurrentScreen("Generating");
-  };
-
-  const navigateToRateMyPromptScreen = () => {
-    setCurrentScreen("RateMyPrompt");
-  };
-
-  // Navigation handler for WriteOrRateScreen
-  const handleWriteOrRateNext = (selection: string) => {
-    if (selection === "write") {
-      navigateToPickYourVibeScreen();
+  const navigate = (screen: ScreenName, replace = false) => {
+    if (replace) {
+      setNavigationHistory([screen]);
     } else {
-      navigateToRateMyPromptScreen();
+      setNavigationHistory((prev) => [...prev, screen]);
     }
+    setCurrentScreen(screen);
   };
 
-  // Placeholder for the next step after interests
-  const handleInterestsNext = (interests: string[]) => {
-    setUserInterests(interests);
-    navigateToUniqueInterestScreen(); // Navigate to the new UniqueInterestScreen
-  };
-
-  // Placeholder for the next step after unique interest
-  const handleUniqueInterestNext = async (uniqueInterest: string) => {
-    setUserUniqueInterest(uniqueInterest);
-
-    navigateToProfileCompletionScreen(); // Navigate to profile completion
+  const goBack = () => {
+    if (navigationHistory.length > 1) {
+      const newHistory = navigationHistory.slice(0, -1);
+      setNavigationHistory(newHistory);
+      setCurrentScreen(newHistory[newHistory.length - 1]);
+    }
   };
 
   useEffect(() => {
-    console.log(
-      "%c [ isInitialUserProfileLoaded ]-321",
-      "font-size:13px; background:pink; color:#bf2c9f;",
-      isInitialUserProfileLoaded
-    );
-    if (!isInitialUserProfileLoaded) return;
-    const update = async () => {
-      const profileData = {
-        name: userName || undefined,
-        age: userAge || undefined,
-        gender: userGender || undefined,
-        orientation: userOrientation || undefined,
-        selectedVibes: userSelectedVibes || undefined,
-        interests: userInterests || undefined,
-        uniqueInterest: userUniqueInterest || undefined,
-        profileCompleted: true,
-      };
-      console.log("Saving user profile data:", profileData);
+    // [DEV MODE] To enable normal startup flow, uncomment the code below.
+    /*
+    const initUserProfile = async () => {
       try {
-        const result = await updateUserProfile(profileData);
-        console.log("Profile saved successfully:", result);
+        const profile = await getUserProfile();
+        if (profile && profile.data) {
+          setUserName(profile.data.name);
+          setUserAge(profile.data.age);
+          setUserGender(profile.data.gender);
+          setUserOrientation(profile.data.orientation);
+          setUserSelectedVibes(profile.data.selectedVibes);
+          setUserInterests(profile.data.interests);
+          setUserUniqueInterest(profile.data.uniqueInterest);
+
+          if (profile.data.profileCompleted) {
+            navigate("WriteOrRate", true);
+          } else if (!profile.data.name) {
+            navigate("NameInput", true);
+          } else if (!profile.data.age) {
+            navigate("AgeInput", true);
+          } else if (!profile.data.gender || !profile.data.orientation) {
+            navigate("GenderOrientation", true);
+          } else {
+            navigate("PickYourVibe", true);
+          }
+        } else {
+          navigate("NameInput", true);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user profile", error);
+        navigate("NameInput", true); // Fallback to a safe screen
+      } finally {
+        setIsInitialUserProfileLoaded(true);
+      }
+    };
+    initUserProfile();
+    */
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialUserProfileLoaded) return;
+    const saveProfile = async () => {
+      const profileData: UserProfileData = {
+        name: userName ?? undefined,
+        age: userAge ?? undefined,
+        gender: userGender ?? undefined,
+        orientation: userOrientation ?? undefined,
+        selectedVibes: userSelectedVibes ?? undefined,
+        interests: userInterests ?? undefined,
+        uniqueInterest: userUniqueInterest ?? undefined,
+        profileCompleted:
+          currentScreen === "PromptResult" || currentScreen === "WriteOrRate",
+      };
+      try {
+        await updateUserProfile(profileData);
       } catch (error) {
         console.error("Failed to save profile:", error);
       }
     };
-    update();
+    saveProfile();
   }, [
     userName,
     userAge,
@@ -350,217 +300,304 @@ function AppContent() {
     userSelectedVibes,
     userInterests,
     userUniqueInterest,
-    isInitialUserProfileLoaded,
   ]);
 
-  // Handler for the final step after profile completion
-  const handleProfileCompletionNext = () => {
-    console.log("Profile onboarding complete. All User Data:", {
-      name: userName,
-      age: userAge,
-      gender: userGender,
-      orientation: userOrientation,
-      vibes: userSelectedVibes,
-      interests: userInterests,
-      uniqueInterest: userUniqueInterest,
-    });
-    navigateToPromptResultScreen(); // Navigate to the new PromptResultScreen
+  if (!isInitialUserProfileLoaded) {
+    return null; // Or a loading screen
+  }
+
+  // Navigation handlers
+  const navigateToSettingsScreen = () => setIsSettingsVisible(true);
+  const handleDropdownNavigate = (screen: "AccountSettings" | "ContactUs") => {
+    navigate(screen);
   };
 
-  // Handler for actions from PromptResultScreen (e.g., Change Prompt)
-  const handlePromptResultFlow = () => {
-    console.log(
-      "Action from PromptResultScreen, e.g., Change Prompt. Looping to Auth for now."
-    );
-    navigateToAuthScreen();
+  const navigateToAgeInputScreen = (name: string) => {
+    setUserName(name);
+    navigate("AgeInput");
   };
-
-  // Handler for saving edited prompt
-  const onSave = (promptId: string, editText: string) => {
-    console.log(`Simulating save for prompt ${promptId}: "${editText}"`);
-    // Here you would typically update your main prompts array or call an API
-    navigateToGeneratingScreen();
+  const navigateToGenderOrientationScreen = (age: number) => {
+    setUserAge(age);
+    navigate("GenderOrientation");
   };
-
-  // Handler for cancelling prompt edit
-  const handleCancelEditPrompt = () => {
-    setPromptToEdit(null); // Clear the editing state
-    setCurrentScreen("PromptResult"); // Go back to results
+  const navigateToWriteOrRateScreen = (
+    gender: string,
+    orientation: string[]
+  ) => {
+    setUserGender(gender);
+    setUserOrientation(orientation);
+    navigate("WriteOrRate");
   };
-
+  const handleWriteOrRateNext = (selection: string) =>
+    navigate(selection === "write" ? "PickYourVibe" : "RateMyPrompt");
+  const navigateToEnterInterestsScreen = (selectedVibes: string[]) => {
+    setUserSelectedVibes(selectedVibes);
+    navigate("EnterInterests");
+  };
+  const handleInterestsNext = (interests: string[]) => {
+    setUserInterests(interests);
+    navigate("UniqueInterest");
+  };
+  const handleUniqueInterestNext = (interest: string) => {
+    setUserUniqueInterest(interest);
+    navigate("ProfileCompletion");
+  };
+  const handleProfileCompletionNext = () => navigate("PromptResult", true);
+  const navigateToEditPromptScreen = (prompt: PromptObjectType) => {
+    setPromptToEdit(prompt);
+    navigate("EditPrompt");
+  };
+  const onSaveEdit = (id: string, text: string) => {
+    /* update logic here */ goBack();
+  };
   const handleRateMyPromptNext = (prompt: string, response: string) => {
-    console.log("Prompt to rate:", { prompt, response });
-    // For now, navigate to the result screen
-    setCurrentScreen("RatingResult");
+    setPromptToRate({ prompt, response });
+    navigate("RatingResult");
   };
 
-  // Handler to trigger verification screen after email sign up/login
-  const handleRequireVerification = (sessionOrIdentifier: any) => {
-    setVerificationSession(sessionOrIdentifier);
-    setCurrentScreen("Verification");
-  };
-
-  // Handler for submitting verification code
-  const handleVerificationNext = async (code: string) => {
-    const session: any = verificationSession;
-    if (!session) return;
-    try {
-      // For signUp
-      if (typeof session.attemptEmailAddressVerification === "function") {
-        const completeSignUp = await session.attemptEmailAddressVerification({
-          code,
-        });
-        if (completeSignUp.status === "complete") {
-          setVerificationSession(null);
-          setCurrentScreen("Thanks");
-        } else {
-          setAlertTitle("Verification failed");
-          setAlertMessage("Please check your code and try again.");
-          setAlertVisible(true);
-        }
-      }
-      // For signIn (if you support email_code sign-in)
-      else if (typeof session.attemptFirstFactor === "function") {
-        const completeSignIn = await session.attemptFirstFactor({
-          strategy: "email_code",
-          code,
-        });
-        if (completeSignIn.status === "complete") {
-          setVerificationSession(null);
-          setCurrentScreen("Thanks");
-        } else {
-          setAlertTitle("Verification failed");
-          setAlertMessage("Please check your code and try again.");
-          setAlertVisible(true);
-        }
-      } else {
-        setAlertTitle("Verification error");
-        setAlertMessage("Unknown verification session type.");
-        setAlertVisible(true);
-      }
-    } catch (err: any) {
-      setAlertTitle("Verification error");
-      setAlertMessage(err.message || "An error occurred during verification.");
-      setAlertVisible(true);
+  const handleRatingNextStep = (selection: NextStep) => {
+    switch (selection) {
+      case "improve":
+        // A bit of a workaround: navigate to EditPrompt, but we need to create a temporary prompt object
+        const tempPromptToEdit: PromptObjectType = {
+          id: `temp-${Date.now()}`,
+          category: promptToRate?.prompt || "Selected prompt",
+          responseText: promptToRate?.response || "",
+          userId: "current-user", // This should be replaced with actual user ID if available
+          aiGenerated: false,
+          status: "active",
+          createdAt: new Date().toISOString(),
+        };
+        setPromptToEdit(tempPromptToEdit);
+        navigate("EditPrompt");
+        break;
+      case "rate_another":
+        navigate("RateMyPrompt", true); // Replace history
+        break;
+      case "write_new":
+        navigate("PickYourVibe", true); // Replace history
+        break;
     }
   };
 
-  // Handler for going back from verification
-  const handleVerificationBack = () => {
-    setVerificationSession(null);
-    setCurrentScreen("Auth");
-  };
+  let screenContent;
+  // ... Render screens based on currentScreen ...
+  switch (currentScreen) {
+    case "NameInput":
+      screenContent = (
+        <ScreenWrapper
+          onBack={goBack}
+          onSettings={navigateToSettingsScreen}
+          hideBack
+        >
+          <NameInputScreen navigateToNext={navigateToAgeInputScreen} />
+        </ScreenWrapper>
+      );
+      break;
+    case "AgeInput":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <AgeInputScreen navigateToNext={navigateToGenderOrientationScreen} />
+        </ScreenWrapper>
+      );
+      break;
+    case "GenderOrientation":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <GenderOrientationScreen
+            navigateToNext={navigateToWriteOrRateScreen}
+          />
+        </ScreenWrapper>
+      );
+      break;
+    case "WriteOrRate":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <WriteOrRateScreen navigateToNextScreen={handleWriteOrRateNext} />
+        </ScreenWrapper>
+      );
+      break;
+    case "PickYourVibe":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <PickYourVibeScreen
+            navigateToNextScreen={navigateToEnterInterestsScreen}
+            selectedVibes={userSelectedVibes || []}
+          />
+        </ScreenWrapper>
+      );
+      break;
+    case "EnterInterests":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <EnterInterestsScreen
+            navigateToNextScreen={handleInterestsNext}
+            selectedInterests={userInterests || []}
+          />
+        </ScreenWrapper>
+      );
+      break;
+    case "UniqueInterest":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <UniqueInterestScreen
+            navigateToNextScreen={handleUniqueInterestNext}
+            selectedUniqueInterest={userUniqueInterest || ""}
+          />
+        </ScreenWrapper>
+      );
+      break;
+    case "ProfileCompletion":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <ProfileCompletionScreen
+            userName={userName}
+            navigateToNext={handleProfileCompletionNext}
+          />
+        </ScreenWrapper>
+      );
+      break;
+    case "PromptResult":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <PromptResultScreen
+            userName={userName}
+            prompts={[]}
+            navigateToEditPrompt={navigateToEditPromptScreen}
+            navigateToNextFlow={() => navigate("WriteOrRate", true)}
+          />
+        </ScreenWrapper>
+      );
+      break;
+    case "EditPrompt":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <EditPromptScreen promptToEdit={promptToEdit!} onSave={onSaveEdit} />
+        </ScreenWrapper>
+      );
+      break;
+    case "Generating":
+      screenContent = (
+        <GeneratingScreen
+          onGenerationComplete={() => navigate("PromptResult")}
+        />
+      );
+      break;
+    case "RateMyPrompt":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <RateMyPromptScreen navigateToNext={handleRateMyPromptNext} />
+        </ScreenWrapper>
+      );
+      break;
+    case "RatingResult":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <RatingResultScreen
+            ratedPrompt={
+              {
+                category: promptToRate?.prompt,
+                responseText: promptToRate?.response,
+              } as any
+            }
+            navigateToNext={() => navigate("RatingNextStep")}
+          />
+        </ScreenWrapper>
+      );
+      break;
+    case "AccountSettings":
+      screenContent = (
+        <AccountSettingsScreen
+          onBack={goBack}
+          onSettings={navigateToSettingsScreen}
+        />
+      );
+      break;
+    case "ContactUs":
+      screenContent = (
+        <ContactUsScreen
+          onBack={goBack}
+          onClose={() => {
+            setIsSettingsVisible(false);
+            goBack();
+          }}
+        />
+      );
+      break;
+    case "RatingNextStep":
+      screenContent = (
+        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+          <RatingNextStepScreen onSelect={handleRatingNextStep} />
+        </ScreenWrapper>
+      );
+      break;
+    default:
+      screenContent = (
+        <ScreenWrapper
+          onBack={goBack}
+          onSettings={navigateToSettingsScreen}
+          hideBack
+        >
+          <NameInputScreen navigateToNext={navigateToAgeInputScreen} />
+        </ScreenWrapper>
+      );
+  }
 
-  if (!appIsReady) {
-    return null;
+  return (
+    <>
+      {screenContent}
+      <SettingsDropdown
+        visible={isSettingsVisible}
+        onClose={() => setIsSettingsVisible(false)}
+        onNavigate={handleDropdownNavigate}
+      />
+    </>
+  );
+}
+
+function AppContent() {
+  useGoogleFontsLink();
+  const { isLoaded: clerkLoaded } = useAuth();
+  const [fontsLoaded, fontError] = useFonts(
+    Platform.OS === "web"
+      ? {}
+      : {
+          Inter_400Regular,
+          Inter_500Medium,
+          Inter_600SemiBold,
+          Inter_700Bold,
+          Inter_800ExtraBold,
+          PlayfairDisplay_700Bold,
+          PlayfairDisplay_800ExtraBold,
+          Gelasio_600SemiBold,
+          Gelasio_700Bold,
+          PaytoneOne_400Regular,
+        }
+  );
+
+  const onLayoutRootView = useCallback(async () => {
+    if (clerkLoaded && (fontsLoaded || fontError || Platform.OS === "web")) {
+      await SplashScreen.hideAsync();
+    }
+  }, [clerkLoaded, fontsLoaded, fontError]);
+
+  if (!clerkLoaded || !(fontsLoaded || fontError || Platform.OS === "web")) {
+    return null; // Show splash screen
   }
 
   if (fontError) {
     console.error("Font loading error:", fontError);
-    return (
-      <View
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        onLayout={onLayoutRootView}
-      >
-        <Text>Error loading fonts. Please restart the app.</Text>
-      </View>
-    );
+    // Optionally render a fallback UI
   }
 
   return (
-    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      {currentScreen === "Landing" && (
-        <LandingPage onSkip={navigateToAuthScreen} />
-      )}
-      {currentScreen === "Auth" && (
-        <AuthScreen
-          navigateToThanks={navigateToThanksScreen}
-          navigateToVerification={handleRequireVerification}
-        />
-      )}
-      {currentScreen === "Thanks" && (
-        <ThanksForSigningUpScreen navigateToNext={navigateToNameInputScreen} />
-      )}
-      {currentScreen === "NameInput" && (
-        <NameInputScreen
-          navigateToNext={(name) => {
-            navigateToAgeInputScreen(name);
-          }}
-        />
-      )}
-      {currentScreen === "AgeInput" && (
-        <AgeInputScreen navigateToNext={navigateToGenderOrientationScreen} />
-      )}
-      {currentScreen === "GenderOrientation" && (
-        <GenderOrientationScreen navigateToNext={navigateToWriteOrRateScreen} />
-      )}
-      {currentScreen === "WriteOrRate" && (
-        <WriteOrRateScreen navigateToNextScreen={handleWriteOrRateNext} />
-      )}
-      {currentScreen === "PickYourVibe" && (
-        <PickYourVibeScreen
-          navigateToNextScreen={navigateToEnterInterestsScreen}
-          selectedVibes={userSelectedVibes || []}
-        />
-      )}
-      {currentScreen === "EnterInterests" && (
-        <EnterInterestsScreen
-          navigateToNextScreen={handleInterestsNext}
-          selectedInterests={userInterests || []}
-        />
-      )}
-      {currentScreen === "UniqueInterest" && (
-        <UniqueInterestScreen
-          navigateToNextScreen={handleUniqueInterestNext}
-          selectedUniqueInterest={userUniqueInterest || ""}
-        />
-      )}
-      {currentScreen === "ProfileCompletion" && (
-        <ProfileCompletionScreen
-          userName={userName}
-          navigateToNext={handleProfileCompletionNext}
-        />
-      )}
-      {currentScreen === "PromptResult" && (
-        <PromptResultScreen
-          userName={userName}
-          prompts={[]} // Pass empty array to use dummy data in the component
-          navigateToNextFlow={handlePromptResultFlow}
-          navigateToEditPrompt={navigateToEditPromptScreen}
-        />
-      )}
-      {currentScreen === "EditPrompt" && promptToEdit && (
-        <EditPromptScreen
-          promptToEdit={promptToEdit}
-          onSave={onSave}
-          onCancel={handleCancelEditPrompt}
-        />
-      )}
-      {currentScreen === "Generating" && (
-        <GeneratingScreen onGenerationComplete={navigateToPromptResultScreen} />
-      )}
-      {currentScreen === "RateMyPrompt" && (
-        <RateMyPromptScreen navigateToNext={handleRateMyPromptNext} />
-      )}
-      {currentScreen === "RatingResult" && (
-        <RatingResultScreen
-          ratedPrompt={dummyRatedPrompt}
-          rating={dummyRating}
-          navigateToNext={navigateToAuthScreen}
-        />
-      )}
-      {currentScreen === "Verification" && (
-        <VerificationScreen
-          onBack={handleVerificationBack}
-          onNext={handleVerificationNext}
-        />
-      )}
-      <AlertModal
-        visible={alertVisible}
-        title={alertTitle}
-        message={alertMessage}
-        onConfirm={() => setAlertVisible(false)}
-      />
+    <View style={styles.container} onLayout={onLayoutRootView}>
+      <SignedIn>
+        <MainApp />
+      </SignedIn>
+      <SignedOut>
+        <AuthFlow />
+      </SignedOut>
     </View>
   );
 }
@@ -574,12 +611,8 @@ export default function App() {
   );
 }
 
-// Original styles (can be removed or kept as needed)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

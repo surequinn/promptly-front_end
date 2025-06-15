@@ -57,79 +57,65 @@ const UniqueInterestScreen: React.FC<UniqueInterestScreenProps> = ({
   };
 
   return (
-    <View style={styles.rootScreenContainer}>
-      <ImageBackground
-        source={ombreBackground}
-        style={styles.backgroundImageFullScreen}
-        imageStyle={styles.fullScreenImageStyle}
-        resizeMode="cover"
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        alwaysBounceVertical={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <SafeAreaView style={styles.safeAreaContentContainer}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            alwaysBounceVertical={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View
-              style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
-            >
-              <View style={styles.mainContent}>
-                <Text style={styles.titleText}>
-                  Tell us something specific you love 😍
-                </Text>
-                <Text style={styles.subtitle1Text}>Give us at least 1!</Text>
-                <Text style={styles.instructionText}>
-                  This could be something oddly specific, low-key nerdy, or just
-                  delightfully random. The weirder or more personal, the better.
-                  We'll make it shine.
-                </Text>
+        <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
+          <View style={styles.mainContent}>
+            <Text style={styles.titleText}>
+              Tell us something specific you love 😍
+            </Text>
+            <Text style={styles.subtitle1Text}>Give us at least 1!</Text>
+            <Text style={styles.instructionText}>
+              This could be something oddly specific, low-key nerdy, or just
+              delightfully random. The weirder or more personal, the better.
+              We'll make it shine.
+            </Text>
 
-                <TextInput
-                  style={styles.uniqueInterestInput}
-                  placeholder="E.g. I love Wes Anderson films, I'm obsessed with fermentation, I always cry during Pixar movies"
-                  placeholderTextColor={colors.textPlaceholder}
-                  value={uniqueInterestText}
-                  onChangeText={setUniqueInterestText}
-                  multiline={true}
-                  textAlignVertical="top"
-                />
-              </View>
+            <TextInput
+              style={styles.uniqueInterestInput}
+              placeholder="E.g. I love Wes Anderson films, I'm obsessed with fermentation, I always cry during Pixar movies"
+              placeholderTextColor={colors.textPlaceholder}
+              value={uniqueInterestText}
+              onChangeText={setUniqueInterestText}
+              multiline={true}
+              textAlignVertical="top"
+            />
+          </View>
 
-              <PrimaryButton
-                title="Next"
-                onPress={validateAndProceed}
-                style={styles.nextButton}
-              />
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </ImageBackground>
+          <PrimaryButton
+            title="Next"
+            onPress={validateAndProceed}
+            style={styles.nextButton}
+          />
+        </View>
+      </ScrollView>
       <AlertModal
         visible={alertVisible}
         title={alertTitle}
         message={alertMessage}
         onConfirm={() => setAlertVisible(false)}
       />
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  rootScreenContainer: {
-    flex: 1,
-    backgroundColor: colors.primaryMuted,
-  },
   backgroundImageFullScreen: {
     flex: 1,
   },
   fullScreenImageStyle: {
     width: "100%",
     height: "100%",
-  },
-  safeAreaContentContainer: {
-    flex: 1,
-    backgroundColor: "transparent",
   },
   scrollContainer: {
     flexGrow: 1,

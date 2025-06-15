@@ -6,13 +6,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
   ImageBackground,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
+import PrimaryButton from "../components/PrimaryButton";
 
 const ombreBackground = require("../../assets/images/ombre_background.png");
 
@@ -20,7 +19,7 @@ const ombreBackground = require("../../assets/images/ombre_background.png");
 const dummyRatedPrompt: PromptObjectType = {
   id: "user-1",
   userId: "test-user-id",
-  aiGenerated: true,
+  aiGenerated: false,
   status: "active",
   createdAt: new Date().toISOString(),
   category: "Together, we could...",
@@ -48,7 +47,7 @@ const dummyRating = {
 
 interface RatingResultScreenProps {
   ratedPrompt: PromptObjectType;
-  rating: typeof dummyRating;
+  rating?: typeof dummyRating;
   navigateToNext: () => void;
 }
 
@@ -58,10 +57,18 @@ const RatingResultScreen: React.FC<RatingResultScreenProps> = ({
   navigateToNext,
 }) => {
   return (
-    <ImageBackground source={ombreBackground} style={styles.backgroundImage}>
-      <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.scoreText}>{rating.score}</Text>
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.contentView}>
+          <Text style={styles.scoreText}>{rating.score} 🎉</Text>
           <Text style={styles.scoreSubtitle}>NICE!</Text>
 
           <View style={styles.cardContainer}>
@@ -69,6 +76,7 @@ const RatingResultScreen: React.FC<RatingResultScreenProps> = ({
               promptId={ratedPrompt.id}
               {...ratedPrompt}
               hideEditButton
+              hideCopyButton
               onCopy={() => {}}
               onEdit={() => {}}
             />
@@ -82,52 +90,58 @@ const RatingResultScreen: React.FC<RatingResultScreenProps> = ({
               </View>
             ))}
           </View>
-
-          <TouchableOpacity onPress={navigateToNext} activeOpacity={0.8}>
-            <LinearGradient
-              colors={[colors.primaryDark, colors.primary]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.doneButton}
-            >
-              <Text style={styles.doneButtonText}>Done</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
+        </View>
+        <View style={styles.buttonContainer}>
+          <PrimaryButton title="Done" onPress={navigateToNext} />
+        </View>
+      </ScrollView>
     </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  backgroundImage: { flex: 1 },
+  backgroundImageFullScreen: {
+    flex: 1,
+  },
   scrollContainer: {
     flexGrow: 1,
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  contentView: {
+    flex: 1,
     alignItems: "center",
+    paddingTop: 100,
+  },
+  fullScreenImageStyle: {
+    width: "100%",
+    height: "100%",
   },
   scoreText: {
     fontFamily: getFontFamily("Inter_800ExtraBold", fontFamilies.inter),
-    fontSize: 64,
-    color: colors.primary,
+    fontSize: 36,
+    color: "#402F73",
+    textAlign: "center",
   },
   scoreSubtitle: {
     fontFamily: getFontFamily("Inter_600SemiBold", fontFamilies.inter),
     fontSize: fontSizes.lg,
-    color: colors.primary,
+    color: "#402F73",
     letterSpacing: 2,
     marginBottom: spacing.lg,
+    textAlign: "center",
   },
   cardContainer: {
     width: "100%",
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
+    // Using a simple background for now, as PromptCard has its own styling.
+    // The complex gradient from Figma might be better applied inside PromptCard if needed.
   },
   explanationContainer: {
     width: "100%",
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 20,
-    padding: spacing.lg,
+    padding: spacing.xl,
     marginBottom: spacing.xl,
   },
   explanationItem: {
@@ -136,7 +150,7 @@ const styles = StyleSheet.create({
   explanationTitle: {
     fontFamily: getFontFamily("Inter_700Bold", fontFamilies.inter),
     fontSize: fontSizes.lg,
-    color: colors.primary,
+    color: "#402F73",
     marginBottom: spacing.sm,
   },
   explanationBody: {
@@ -145,16 +159,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: fontSizes.md * 1.5,
   },
-  doneButton: {
-    borderRadius: 15,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xxl,
+  buttonContainer: {
+    width: "100%",
     alignItems: "center",
-  },
-  doneButtonText: {
-    fontFamily: getFontFamily("Inter_600SemiBold", fontFamilies.inter),
-    fontSize: fontSizes.lg,
-    color: colors.white,
   },
 });
 

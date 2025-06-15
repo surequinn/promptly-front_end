@@ -30,69 +30,45 @@ const ThanksForSigningUpScreen: React.FC<ThanksForSigningUpScreenProps> = ({
   navigateToNext,
 }) => {
   return (
-    <View style={styles.rootScreenContainer}>
-      <ImageBackground
-        source={ombreBackground}
-        style={styles.backgroundImageFullScreen}
-        imageStyle={styles.fullScreenImageStyle}
-        resizeMode="cover"
-      >
-        <SafeAreaView style={styles.safeAreaContentContainer}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            alwaysBounceVertical={false}
-          >
-            <View
-              style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
-            >
-              <View style={styles.textContainer}>
-                <Text style={styles.titleText}>Thanks for signing up! 🙌</Text>
-                <Text style={styles.subtitleText}>
-                  Let's make a prompt that sounds like you. Just a few quick
-                  questions—your vibe, your interests, what makes you different.
-                  Ready?
-                </Text>
-              </View>
-              <PrimaryButton
-                title="Next"
-                onPress={() => {
-                  console.log(
-                    "Next button pressed on ThanksForSigningUpScreen, navigating to NameInput"
-                  );
-                  navigateToNext();
-                }}
-                style={styles.nextButton}
-              />
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </ImageBackground>
-    </View>
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <View style={styles.contentView}>
+        <View style={styles.textContainer}>
+          <Text style={styles.titleText}>Thanks for signing up! 🙌</Text>
+          <Text style={styles.subtitleText}>
+            Let's make a prompt that sounds like you. Just a few quick
+            questions—your vibe, your interests, what makes you different.
+            Ready?
+          </Text>
+        </View>
+        <PrimaryButton
+          title="Next"
+          onPress={() => {
+            console.log(
+              "Next button pressed on ThanksForSigningUpScreen, navigating to NameInput"
+            );
+            navigateToNext();
+          }}
+          style={styles.nextButton}
+        />
+      </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  rootScreenContainer: {
-    flex: 1,
-    backgroundColor: colors.primaryMuted, // Fallback using theme color
-  },
   backgroundImageFullScreen: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   fullScreenImageStyle: {
     width: "100%",
     height: "100%",
-  },
-  safeAreaContentContainer: {
-    flex: 1,
-    backgroundColor: "transparent",
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: spacing.xl * scaleFactor,
   },
   contentView: {
     width: "100%",

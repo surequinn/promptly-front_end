@@ -21,6 +21,7 @@ interface PromptCardProps {
   onCopy: () => void;
   onEdit: () => void;
   hideEditButton?: boolean;
+  hideCopyButton?: boolean;
   onSave?: (promptId: string, category: string, responseText: string) => void;
 }
 
@@ -32,6 +33,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   onEdit,
   onSave,
   hideEditButton,
+  hideCopyButton,
 }) => {
   return (
     <LinearGradient
@@ -49,9 +51,15 @@ const PromptCard: React.FC<PromptCardProps> = ({
         <Text style={[styles.quoteText, styles.endQuote]}>”</Text>
       </View>
       <View style={styles.actionsContainer}>
-        <TouchableOpacity onPress={onCopy} style={styles.actionButton}>
-          <Feather name="copy" size={22 * scaleFactor} color={colors.primary} />
-        </TouchableOpacity>
+        {!hideCopyButton && (
+          <TouchableOpacity onPress={onCopy} style={styles.actionButton}>
+            <Feather
+              name="copy"
+              size={22 * scaleFactor}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+        )}
         {!hideEditButton && (
           <TouchableOpacity onPress={onEdit} style={styles.actionButton}>
             <Feather

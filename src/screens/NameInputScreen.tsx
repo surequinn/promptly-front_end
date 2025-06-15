@@ -42,46 +42,40 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
   };
 
   return (
-    <View style={styles.rootScreenContainer}>
-      <ImageBackground
-        source={ombreBackground}
-        style={styles.backgroundImageFullScreen}
-        imageStyle={styles.fullScreenImageStyle}
-        resizeMode="cover"
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        alwaysBounceVertical={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <SafeAreaView style={styles.safeAreaContentContainer}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            alwaysBounceVertical={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View
-              style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
-            >
-              <View style={styles.mainContent}>
-                <Text style={styles.titleText}>What's your name? ✨</Text>
+        <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
+          <View style={styles.mainContent}>
+            <Text style={styles.titleText}>What's your name? ✨</Text>
 
-                <TextInput
-                  style={styles.inputField}
-                  placeholder="Your name"
-                  placeholderTextColor={colors.textPlaceholder}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
-              </View>
+            <TextInput
+              style={styles.inputField}
+              placeholder="Your name"
+              placeholderTextColor={colors.textPlaceholder}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              autoCorrect={false}
+            />
+          </View>
 
-              <PrimaryButton
-                title="Next"
-                onPress={handleNextPress}
-                style={styles.nextButton}
-              />
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </ImageBackground>
+          <PrimaryButton
+            title="Next"
+            onPress={handleNextPress}
+            style={styles.nextButton}
+          />
+        </View>
+      </ScrollView>
       <AlertModal
         visible={modalVisible}
         title="Name Required"
@@ -90,25 +84,17 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
           setModalVisible(false);
         }}
       />
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  rootScreenContainer: {
-    flex: 1,
-    backgroundColor: colors.primaryMuted, // Fallback, though image should cover
-  },
   backgroundImageFullScreen: {
     flex: 1,
   },
   fullScreenImageStyle: {
     width: "100%",
     height: "100%",
-  },
-  safeAreaContentContainer: {
-    flex: 1,
-    backgroundColor: "transparent",
   },
   scrollContainer: {
     flexGrow: 1,

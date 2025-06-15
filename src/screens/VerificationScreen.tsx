@@ -9,14 +9,19 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ImageBackground,
+  ScrollView,
 } from "react-native";
 import PrimaryButton from "../components/PrimaryButton";
 import { colors, spacing } from "../theme";
+import AlertModal from "@/components/modals/AlertModal";
 
 const { width, height } = Dimensions.get("window");
 const isWebApp = Platform.OS === "web";
 const innerContentMaxWidth = isWebApp ? 428 : Math.min(width - 40, 380);
 const scaleFactor = height < 700 ? 0.88 : height < 800 ? 0.94 : 1;
+
+const ombreBackground = require("../../assets/images/ombre_background.png");
 
 export default function VerificationScreen({
   onBack,
@@ -26,74 +31,97 @@ export default function VerificationScreen({
   onNext: (code: string) => void;
 }) {
   const [code, setCode] = useState("");
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertTitle, setAlertTitle] = useState("");
 
   return (
-    <View style={styles.root}>
-      <LinearGradient
-        colors={["#EDEAFF", "#F6E6F8", "#FDE6E6"]}
-        style={styles.background}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        {/* Back Arrow */}
-        <TouchableOpacity
-          style={styles.backArrow}
-          onPress={onBack}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.backArrowText}>{"<"}</Text>
-        </TouchableOpacity>
-
-        {/* Title */}
-        <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
-          <Text
-            style={[
-              styles.title,
-              {
-                fontSize: 22 * scaleFactor,
-                marginBottom: 36 * scaleFactor,
-                marginTop: 40 * scaleFactor,
-              },
-            ]}
+    <ImageBackground
+      source={ombreBackground}
+      style={styles.backgroundImageFullScreen}
+      imageStyle={styles.fullScreenImageStyle}
+      resizeMode="cover"
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.root}>
+          <LinearGradient
+            colors={["#EDEAFF", "#F6E6F8", "#FDE6E6"]}
+            style={styles.background}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
           >
-            Enter your verification code
-          </Text>
+            {/* Back Arrow */}
+            <TouchableOpacity
+              style={styles.backArrow}
+              onPress={onBack}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.backArrowText}>{"<"}</Text>
+            </TouchableOpacity>
 
-          {/* Verification Field */}
-          <View
-            style={[
-              styles.verificationField,
-              {
-                width: Math.min(width - 80, 274) * scaleFactor,
-                height: 52 * scaleFactor,
-                marginBottom: 40 * scaleFactor,
-              },
-            ]}
-          >
-            <TextInput
-              style={[
-                styles.codeInput,
-                { fontSize: 18 * scaleFactor, letterSpacing: 4 * scaleFactor },
-              ]}
-              value={code}
-              onChangeText={setCode}
-              placeholder="123456"
-              placeholderTextColor={colors.textPlaceholder || "#A0A0A0"}
-              keyboardType="number-pad"
-              maxLength={6}
-              textAlign="center"
-              autoFocus
+            {/* Title */}
+            <View
+              style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}
+            >
+              <Text
+                style={[
+                  styles.title,
+                  {
+                    fontSize: 22 * scaleFactor,
+                    marginBottom: 36 * scaleFactor,
+                    marginTop: 40 * scaleFactor,
+                  },
+                ]}
+              >
+                Enter your verification code
+              </Text>
+
+              {/* Verification Field */}
+              <View
+                style={[
+                  styles.verificationField,
+                  {
+                    width: Math.min(width - 80, 274) * scaleFactor,
+                    height: 52 * scaleFactor,
+                    marginBottom: 40 * scaleFactor,
+                  },
+                ]}
+              >
+                <TextInput
+                  style={[
+                    styles.codeInput,
+                    {
+                      fontSize: 18 * scaleFactor,
+                      letterSpacing: 4 * scaleFactor,
+                    },
+                  ]}
+                  value={code}
+                  onChangeText={setCode}
+                  placeholder="123456"
+                  placeholderTextColor={colors.textPlaceholder || "#A0A0A0"}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  textAlign="center"
+                  autoFocus
+                />
+              </View>
+            </View>
+            <PrimaryButton
+              title="Next"
+              onPress={() => onNext(code)}
+              style={styles.nextButton}
+              disabled={code.length === 0}
             />
-          </View>
+          </LinearGradient>
         </View>
-        <PrimaryButton
-          title="Next"
-          onPress={() => onNext(code)}
-          style={styles.nextButton}
-          disabled={code.length === 0}
-        />
-      </LinearGradient>
-    </View>
+      </ScrollView>
+      <AlertModal
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onConfirm={() => setAlertVisible(false)}
+      />
+    </ImageBackground>
   );
 }
 
@@ -161,5 +189,14 @@ const styles = StyleSheet.create({
     maxWidth: 300,
     minHeight: 55 * scaleFactor,
     alignSelf: "center",
+  },
+  backgroundImageFullScreen: {
+    flex: 1,
+  },
+  fullScreenImageStyle: {
+    // ... (existing fullScreenImageStyle)
+  },
+  scrollContainer: {
+    // ... (existing scrollContainer)
   },
 });

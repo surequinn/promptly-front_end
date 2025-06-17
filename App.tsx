@@ -459,7 +459,11 @@ function MainApp() {
       break;
     case "PromptResult":
       screenContent = (
-        <ScreenWrapper onBack={goBack} onSettings={navigateToSettingsScreen}>
+        <ScreenWrapper
+          onBack={goBack}
+          onSettings={navigateToSettingsScreen}
+          title="✨ Magic's done!"
+        >
           <PromptResultScreen
             userName={userName}
             prompts={[]}

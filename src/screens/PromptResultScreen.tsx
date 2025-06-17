@@ -92,9 +92,13 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
             savePrompt(prompt.category, prompt.responseText)
           )
         );
-        const prompts = savedPrompts.map((prompt) => prompt.data);
+        const prompts = savedPrompts
+          .map((prompt) => prompt.data)
+          .filter(Boolean);
         console.log("Saved prompts:", prompts);
-        setPromptsToRender(prompts as PromptObjectType[]);
+        if (prompts.length > 0) {
+          setPromptsToRender(prompts as PromptObjectType[]);
+        }
       }
     };
     savePrompts();
@@ -151,30 +155,21 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
-          <View style={styles.headerContainer}>
-            <View style={styles.headerTop}>
-              <Text style={styles.titleText}>✨ Magic's done!</Text>
-              <SignOutButton
-                style={styles.signOutButton}
-                textStyle={styles.signOutText}
-              />
-            </View>
-            <Text style={styles.subtitleText}>
-              Here are three responses our AI generated. Like one? Hit{" "}
-              <Feather
-                name="copy"
-                size={fontSizes.md * scaleFactor}
-                color={colors.primary}
-              />{" "}
-              to copy. Want to tweak it? Tap{" "}
-              <Feather
-                name="edit-2"
-                size={fontSizes.md * scaleFactor}
-                color={colors.primary}
-              />{" "}
-              to add your thoughts.
-            </Text>
-          </View>
+          <Text style={styles.subtitleText}>
+            Here are three responses our AI generated. Like one? Hit{" "}
+            <Feather
+              name="copy"
+              size={fontSizes.md * scaleFactor}
+              color={colors.primary}
+            />{" "}
+            to copy. Want to tweak it? Tap{" "}
+            <Feather
+              name="edit-2"
+              size={fontSizes.md * scaleFactor}
+              color={colors.primary}
+            />{" "}
+            to add your thoughts.
+          </Text>
 
           <View style={styles.promptsListContainer}>
             {promptsToRender.map((prompt) => (
@@ -235,7 +230,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: spacing.xl * scaleFactor,
+    paddingTop: 100,
+    paddingBottom: spacing.xl * scaleFactor,
   },
   contentView: {
     width: "100%",
@@ -244,48 +240,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     paddingHorizontal: spacing.lg * scaleFactor,
   },
-  headerContainer: {
-    alignItems: "center",
-    marginBottom: spacing.xl * scaleFactor,
-    width: "100%",
-  },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    marginBottom: spacing.md * scaleFactor,
-  },
-  titleText: {
-    fontFamily: getFontFamily("Inter_600SemiBold", fontFamilies.inter), // Figma: Inter SemiBold
-    fontSize: fontSizes.xxxl * scaleFactor, // Figma: 36px
-    color: colors.primary, // Figma: #000000, using primary for consistency
-    textAlign: "center",
-    flex: 1,
-  },
-  signOutButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.primary,
-    paddingHorizontal: 12 * scaleFactor,
-    paddingVertical: 6 * scaleFactor,
-    borderRadius: 20,
-  },
-  signOutText: {
-    fontSize: 12 * scaleFactor,
-    color: colors.primary,
-  },
   subtitleText: {
-    fontFamily: getFontFamily("Inter_500Medium", fontFamilies.inter),
-    fontSize: fontSizes.md * scaleFactor, // Figma: 16px
-    color: colors.primary, // Figma: #402F73
+    fontFamily: getFontFamily("Inter_400Regular", fontFamilies.inter),
+    fontSize: fontSizes.md * scaleFactor,
+    color: colors.textSecondary,
     textAlign: "center",
-    lineHeight: fontSizes.md * 1.5 * scaleFactor, // Increased for icon inclusion
-    maxWidth: "95%",
+    lineHeight: fontSizes.md * 1.6 * scaleFactor,
+    marginBottom: spacing.lg * scaleFactor,
+    width: "100%",
   },
   promptsListContainer: {
     width: "100%",
-    marginVertical: spacing.lg * scaleFactor,
+    marginBottom: spacing.lg * scaleFactor,
   },
   changePromptButton: {
     width: "80%",

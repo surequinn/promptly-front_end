@@ -30,38 +30,6 @@ const isWebApp = Platform.OS === "web";
 const scaleFactor = height < 700 ? 0.88 : height < 800 ? 0.94 : 1;
 const innerContentMaxWidth = isWebApp ? 428 : Math.min(width - 40, 380);
 
-const DUMMY_PROMPTS: PromptObjectType[] = [
-  {
-    id: `test-1`,
-    userId: "test-user-id",
-    aiGenerated: true,
-    status: "active",
-    createdAt: new Date().toISOString(),
-    category: "Dating me is like...",
-    responseText:
-      "Finding a parking spot right in front of the store on a busy day—unexpectedly perfect and makes you feel like you've won.",
-  },
-  {
-    id: `test-2`,
-    userId: "test-user-id",
-    aiGenerated: true,
-    status: "active",
-    createdAt: new Date().toISOString(),
-    category: "Dating me is like...",
-    responseText:
-      "A software update. Mostly improves your life, occasionally has a weird bug, but always trying to get better.",
-  },
-  {
-    id: `test-3`,
-    userId: "test-user-id",
-    aiGenerated: true,
-    status: "active",
-    createdAt: new Date().toISOString(),
-    category: "Dating me is like...",
-    responseText: `A perfectly curated playlist. There's a song for every mood, some unexpected deep cuts, and it's guaranteed to make you dance.`,
-  },
-];
-
 interface PromptResultScreenProps {
   userName: string | null;
   prompts: PromptObjectType[];
@@ -80,32 +48,11 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
-  const [promptsToRender, setPromptsToRender] = useState<PromptObjectType[]>(
-    prompts && prompts.length > 0 ? prompts : DUMMY_PROMPTS
-  );
-
-  useEffect(() => {
-    const savePrompts = async () => {
-      if (promptsToRender.length > 0) {
-        const savedPrompts = await Promise.all(
-          promptsToRender.map((prompt) =>
-            savePrompt(prompt.category, prompt.responseText)
-          )
-        );
-        const prompts = savedPrompts
-          .map((prompt) => prompt.data)
-          .filter(Boolean);
-        console.log("Saved prompts:", prompts);
-        if (prompts.length > 0) {
-          setPromptsToRender(prompts as PromptObjectType[]);
-        }
-      }
-    };
-    savePrompts();
-  }, []);
 
   const handleCopy = async (textToCopy: string, promptId: string) => {
-    savePromptUsageRecord("1c3219a6-701a-4f64-ba6c-0f1e00f0384f");
+    // This promptId is temporary, so we may not want to record usage yet,
+    // or we need a way to get the real ID after it's saved.
+    // await savePromptUsageRecord(promptId);
     await Clipboard.setStringAsync(textToCopy);
     setAlertTitle("Copied!");
     setAlertMessage("Prompt copied to clipboard.");
@@ -172,7 +119,7 @@ const PromptResultScreen: React.FC<PromptResultScreenProps> = ({
           </Text>
 
           <View style={styles.promptsListContainer}>
-            {promptsToRender.map((prompt) => (
+            {prompts.map((prompt) => (
               <PromptCard
                 key={prompt.id}
                 promptId={prompt.id}

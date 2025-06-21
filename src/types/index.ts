@@ -8,4 +8,5 @@ export interface PromptObjectType {
   promptType?: string;
   createdAt: string;
   updatedAt?: string;
+  evaluation?: any;
 }

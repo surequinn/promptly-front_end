@@ -15,7 +15,7 @@ import PrimaryButton from "../components/PrimaryButton";
 
 const ombreBackground = require("../../assets/images/ombre_background.png");
 
-// Dummy data for display
+// Dummy data for display - This will no longer be used by default
 const dummyRatedPrompt: PromptObjectType = {
   id: "user-1",
   userId: "test-user-id",
@@ -27,35 +27,28 @@ const dummyRatedPrompt: PromptObjectType = {
     "Finally figure out what the dog is thinking. And also, maybe travel.",
 };
 
-const dummyRating = {
-  score: "7/10",
-  explanation: [
-    {
-      title: "Strong Start!",
-      body: "Great opening! It's quirky and immediately shows off your sense of humor. The idea of figuring out what a dog is thinking is a fun, universal concept that many people can relate to.",
-    },
-    {
-      title: "Room for a Little More 'You'",
-      body: "The second part, 'maybe travel,' feels a bit generic. It's a common interest, which is fine, but it doesn't add as much personality as the first part. What kind of travel excites you? A spontaneous road trip? Visiting every ramen shop in Tokyo? Getting more specific can make your response even more memorable.",
-    },
-    {
-      title: "The Verdict",
-      body: "This is a solid, engaging response that's likely to get a smile. To elevate it, consider replacing the travel line with another unique, specific idea that complements the humor of the first part. Keep up the great work!",
-    },
-  ],
-};
-
 interface RatingResultScreenProps {
   ratedPrompt: PromptObjectType;
-  rating?: typeof dummyRating;
+  rating?: {
+    overall_score: number;
+    label: string;
+    suggestions: string[];
+  };
   navigateToNext: () => void;
 }
 
 const RatingResultScreen: React.FC<RatingResultScreenProps> = ({
   ratedPrompt = dummyRatedPrompt,
-  rating = dummyRating,
+  rating,
   navigateToNext,
 }) => {
+  // Use a default for rating if it's not provided, to prevent crashes.
+  const ratingData = rating || {
+    overall_score: 0,
+    label: "Needs Work",
+    suggestions: ["Could not retrieve rating."],
+  };
+
   return (
     <ImageBackground
       source={ombreBackground}
@@ -68,8 +61,10 @@ const RatingResultScreen: React.FC<RatingResultScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.contentView}>
-          <Text style={styles.scoreText}>{rating.score} 🎉</Text>
-          <Text style={styles.scoreSubtitle}>NICE!</Text>
+          <Text style={styles.scoreText}>
+            {ratingData.overall_score?.toFixed(1) || "N/A"} / 10
+          </Text>
+          <Text style={styles.scoreSubtitle}>{ratingData.label || ""}</Text>
 
           <View style={styles.cardContainer}>
             <PromptCard
@@ -83,10 +78,12 @@ const RatingResultScreen: React.FC<RatingResultScreenProps> = ({
           </View>
 
           <View style={styles.explanationContainer}>
-            {rating.explanation.map((item, index) => (
+            {ratingData.suggestions?.map((suggestion, index) => (
               <View key={index} style={styles.explanationItem}>
-                <Text style={styles.explanationTitle}>{item.title}</Text>
-                <Text style={styles.explanationBody}>{item.body}</Text>
+                <Text style={styles.explanationTitle}>
+                  Suggestion #{index + 1}
+                </Text>
+                <Text style={styles.explanationBody}>{suggestion}</Text>
               </View>
             ))}
           </View>

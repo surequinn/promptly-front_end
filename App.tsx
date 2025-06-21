@@ -181,7 +181,7 @@ function AuthFlow() {
 
 // Component for the Signed-In flow (main app)
 function MainApp() {
-  const { updateUserProfile, getUserProfile } = useApiClient();
+  const apiClient = useApiClient();
 
   // --- DEVELOPER START PAGE ---
   // To test a specific screen, set it as the initial screen here and comment out the
@@ -213,6 +213,8 @@ function MainApp() {
     prompt: string;
     response: string;
   } | null>(null);
+  const [ratingResult, setRatingResult] = useState<any | null>(null);
+  const [aiPrompts, setAiPrompts] = useState<PromptObjectType[]>([]);
 
   const navigate = (screen: ScreenName, replace = false) => {
     if (replace) {
@@ -286,7 +288,7 @@ function MainApp() {
           currentScreen === "PromptResult" || currentScreen === "WriteOrRate",
       };
       try {
-        await updateUserProfile(profileData);
+        await apiClient.updateUserProfile(profileData);
       } catch (error) {
         console.error("Failed to save profile:", error);
       }
@@ -342,16 +344,120 @@ function MainApp() {
     setUserUniqueInterest(interest);
     navigate("ProfileCompletion");
   };
-  const handleProfileCompletionNext = () => navigate("PromptResult", true);
+  const handleProfileCompletionNext = async () => {
+    navigate("Generating");
+    const userProfilePayload = {
+      gender: userGender || undefined,
+      targetGender: userOrientation?.[0] || undefined,
+      tones: userSelectedVibes || undefined,
+      interests: userInterests || undefined,
+      specificLove: userUniqueInterest || undefined,
+    };
+
+    try {
+      const result = await apiClient.getPromptSuggestions(userProfilePayload);
+      if (result && result.responses) {
+        // Transform the AI response into the format the frontend expects
+        const formattedPrompts = result.responses.map((resp: any) => ({
+          id: `ai-${Math.random()}`, // Temporary unique ID
+          category: result.chosenPrompt,
+          responseText: resp.text,
+          aiGenerated: true,
+          status: "active",
+          evaluation: {
+            scores: resp.scores,
+            explanations: resp.explanations,
+            overall_score: resp.overall_score,
+            label: resp.label,
+          },
+        }));
+        setAiPrompts(formattedPrompts);
+        navigate("PromptResult", true);
+      }
+    } catch (error) {
+      console.error("Failed to get AI prompt suggestions:", error);
+      // Handle error, maybe navigate back or show an alert
+      goBack();
+    }
+  };
   const navigateToEditPromptScreen = (prompt: PromptObjectType) => {
     setPromptToEdit(prompt);
     navigate("EditPrompt");
   };
-  const onSaveEdit = (id: string, text: string) => {
-    /* update logic here */ goBack();
+
+  const onSaveEdit = async (promptId: string, feedback: string) => {
+    if (!promptToEdit) return;
+
+    // Show a loading screen while the AI is working
+    navigate("Generating");
+
+    try {
+      let revisedResponseData;
+
+      // Scenario 1: Revise an AI-generated prompt
+      if (promptToEdit.aiGenerated && promptToEdit.evaluation) {
+        revisedResponseData = await apiClient.revisePromptSuggestion(
+          promptToEdit.category,
+          promptToEdit.responseText,
+          promptToEdit.evaluation,
+          feedback
+        );
+      }
+      // Scenario 2: Revise a user's custom prompt that has been evaluated
+      else if (!promptToEdit.aiGenerated && ratingResult) {
+        revisedResponseData = await apiClient.reviseCustomPrompt(
+          promptToEdit.category,
+          promptToEdit.responseText,
+          ratingResult, // The full evaluation object from the previous step
+          ratingResult.suggestions // The specific suggestions array
+        );
+      }
+
+      if (revisedResponseData && revisedResponseData.revisedResponse) {
+        // Update the prompt text in our state
+        const updatedText = revisedResponseData.revisedResponse;
+
+        // If it was an AI prompt, update it in the `aiPrompts` list
+        if (promptToEdit.aiGenerated) {
+          setAiPrompts((prev) =>
+            prev.map((p) =>
+              p.id === promptToEdit.id ? { ...p, responseText: updatedText } : p
+            )
+          );
+          navigate("PromptResult", true); // Go back to the results list
+        }
+        // If it was a custom prompt, update it and go to the rating result screen
+        else {
+          const updatedPrompt = { ...promptToEdit, responseText: updatedText };
+          setPromptToEdit(updatedPrompt);
+          // We need a new evaluation for the revised text.
+          // For now, let's just go back to the rating screen to show the new text.
+          // A complete implementation would re-evaluate and show the new score.
+          setPromptToRate({
+            prompt: updatedPrompt.category,
+            response: updatedPrompt.responseText,
+          });
+          // Since we don't have a new rating, we'll clear the old one
+          setRatingResult(null);
+          navigate("RatingResult", true);
+        }
+      } else {
+        // If the API call fails or returns no data, just go back
+        goBack();
+      }
+    } catch (error) {
+      console.error("Failed to revise prompt:", error);
+      goBack(); // Go back on error
+    }
   };
-  const handleRateMyPromptNext = (prompt: string, response: string) => {
+
+  const handleRateMyPromptNext = (
+    prompt: string,
+    response: string,
+    evaluationResult: any
+  ) => {
     setPromptToRate({ prompt, response });
+    setRatingResult(evaluationResult);
     navigate("RatingResult");
   };
 
@@ -466,7 +572,7 @@ function MainApp() {
         >
           <PromptResultScreen
             userName={userName}
-            prompts={[]}
+            prompts={aiPrompts}
             navigateToEditPrompt={navigateToEditPromptScreen}
             navigateToNextFlow={() => navigate("WriteOrRate", true)}
           />
@@ -504,6 +610,7 @@ function MainApp() {
                 responseText: promptToRate?.response,
               } as any
             }
+            rating={ratingResult}
             navigateToNext={() => navigate("RatingNextStep")}
           />
         </ScreenWrapper>

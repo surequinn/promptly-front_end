@@ -12,12 +12,16 @@ import {
   View,
   Dimensions,
   ScrollView,
+  Platform,
 } from "react-native";
 import AlertModal from "@/components/modals/AlertModal";
+import { useApiClient } from "@/services/api";
 
 const ombreBackground = require("../../assets/images/ombre_background.png");
 
 const { width, height } = Dimensions.get("window");
+const isWebApp = Platform.OS === "web";
+const innerContentMaxWidth = isWebApp ? 428 : Math.min(width - 40, 380);
 
 const PROMPTS = [
   "Together, we could...",
@@ -27,16 +31,22 @@ const PROMPTS = [
 ];
 
 interface RateMyPromptScreenProps {
-  navigateToNext: (prompt: string, response: string) => void;
+  navigateToNext: (
+    prompt: string,
+    response: string,
+    evaluationResult?: any
+  ) => void;
 }
 
 const RateMyPromptScreen: React.FC<RateMyPromptScreenProps> = ({
   navigateToNext,
 }) => {
+  const apiClient = useApiClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPrompt, setSelectedPrompt] = useState("");
   const [response, setResponse] = useState("");
   const [alertVisible, setAlertVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const filteredPrompts = searchQuery
     ? PROMPTS.filter((p) => p.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -45,6 +55,27 @@ const RateMyPromptScreen: React.FC<RateMyPromptScreenProps> = ({
   const handleSelectPrompt = (prompt: string) => {
     setSelectedPrompt(prompt);
     setSearchQuery(prompt);
+  };
+
+  const handleEvaluation = async () => {
+    if (!selectedPrompt || !response) {
+      // This case is handled by the disabled button, but good practice to keep
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const evaluationResult = await apiClient.evaluateCustomPrompt(
+        selectedPrompt,
+        response
+      );
+      // Pass the original prompt/response and the new evaluation to the next screen
+      navigateToNext(selectedPrompt, response, evaluationResult);
+    } catch (error) {
+      console.error("Failed to evaluate prompt:", error);
+      // Optionally, show an error alert to the user
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -59,7 +90,7 @@ const RateMyPromptScreen: React.FC<RateMyPromptScreenProps> = ({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.contentView}>
+        <View style={[styles.contentView, { maxWidth: innerContentMaxWidth }]}>
           <Text style={styles.title}>Rate my response</Text>
           <Text style={styles.subtitle}>
             Put your response to the test. We'll judge (nicely). 😉
@@ -112,8 +143,8 @@ const RateMyPromptScreen: React.FC<RateMyPromptScreenProps> = ({
         <View style={styles.buttonContainer}>
           <PrimaryButton
             title="Next"
-            onPress={() => navigateToNext(selectedPrompt, response)}
-            disabled={!selectedPrompt || !response}
+            onPress={handleEvaluation}
+            disabled={!selectedPrompt || !response || isLoading}
           />
         </View>
       </ScrollView>
@@ -139,11 +170,13 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
+    alignItems: "center",
   },
   contentView: {
     flex: 1,
     paddingTop: 120,
     alignItems: "center",
+    width: "100%",
   },
   title: {
     fontFamily: getFontFamily("Inter_800ExtraBold", fontFamilies.inter),

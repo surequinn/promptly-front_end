@@ -7,6 +7,14 @@ const API_BASE_URL =
     ? `${process.env.EXPO_PUBLIC_API_URL}/api`
     : "http://localhost:3001/api";
 
+export interface UserProfilePayload {
+  gender?: string;
+  targetGender?: string;
+  tones?: string[];
+  interests?: string[];
+  specificLove?: string;
+}
+
 export interface UserProfileData {
   name?: string;
   age?: number;
@@ -70,6 +78,56 @@ class ApiClient {
       return response.text();
     }
   }
+
+  // =============================================
+  // AI-Powered Prompt Generation
+  // =============================================
+
+  // Feature 1: Get 3 AI-generated prompt suggestions
+  getPromptSuggestions = (userProfile: UserProfilePayload) =>
+    this.makeAuthenticatedRequest("/prompts/generate-suggestions", {
+      method: "POST",
+      body: JSON.stringify({ userProfile }),
+    });
+
+  // Feature 1.1: Revise an AI-generated suggestion
+  revisePromptSuggestion = (
+    prompt: string,
+    response: string,
+    evaluation: any,
+    feedback: string
+  ) =>
+    this.makeAuthenticatedRequest("/prompts/revise-suggestion", {
+      method: "POST",
+      body: JSON.stringify({ prompt, response, evaluation, feedback }),
+    });
+
+  // =============================================
+  // AI-Powered Prompt Evaluation
+  // =============================================
+
+  // Feature 2: Evaluate a user's custom prompt
+  evaluateCustomPrompt = (prompt: string, response: string) =>
+    this.makeAuthenticatedRequest("/prompts/evaluate-custom", {
+      method: "POST",
+      body: JSON.stringify({ prompt, response }),
+    });
+
+  // Feature 2.1: Revise a user's custom prompt after evaluation
+  reviseCustomPrompt = (
+    prompt: string,
+    response: string,
+    evaluation: any,
+    suggestions: string[]
+  ) =>
+    this.makeAuthenticatedRequest("/prompts/revise-custom", {
+      method: "POST",
+      body: JSON.stringify({ prompt, response, evaluation, suggestions }),
+    });
+
+  // =============================================
+  // Existing Database Routes
+  // =============================================
 
   // Get user profile
   getUserProfile = () =>

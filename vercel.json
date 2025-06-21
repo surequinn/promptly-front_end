@@ -25,5 +25,11 @@
         }
       ]
     }
-  ]
+  ],
+  "build": {
+    "env": {
+      "EXPO_PUBLIC_API_URL": "https://promptly-back-mp5guwmbm-quinns-projects-3ee04bc1.vercel.app"
+    }
+  },
+  "outputDirectory": "dist"
 }
